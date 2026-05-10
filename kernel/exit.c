@@ -4,15 +4,13 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#if __APPLE__
-#include <malloc/malloc.h>
-#endif
 #include "kernel/calls.h"
 #include "kernel/mm.h"
 #include "kernel/futex.h"
 #include "kernel/ptrace.h"
 #include "fs/fd.h"
 #include "fs/tty.h"
+#include "platform/platform.h"
 
 static void halt_system(void);
 
@@ -332,11 +330,7 @@ noreturn void do_exit_group(int status) {
             struct timespec extra_delay = {0, 50 * 1000000L};  // 50ms for pthread cleanup
             nanosleep(&extra_delay, NULL);
 
-#if __APPLE__
-            // Force malloc zone cleanup to release thread-specific caches
-            // This helps prevent pollution between guest processes
-            malloc_zone_pressure_relief(NULL, 0);
-#endif
+            platform_release_thread_memory_pressure();
         }
 
         lock(&pids_lock);

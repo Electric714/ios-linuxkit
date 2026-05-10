@@ -1,5 +1,6 @@
 #include <sys/stat.h>
 #include <inttypes.h>
+#include <stdatomic.h>
 #include <string.h>
 #include "kernel/calls.h"
 #include "fs/proc.h"
@@ -18,7 +19,7 @@ static int proc_show_stat(struct proc_entry *UNUSED(entry), struct proc_data *bu
 
     // calculate btime (boot time in seconds since epoch) by subtracting uptime from current time
     struct uptime_info uptime = get_uptime();
-    struct timespec uptime_ts = {.tv_sec = uptime.uptime_ticks / 100, .tv_nsec = uptime.uptime_ticks % 100};
+    struct timespec uptime_ts = {.tv_sec = uptime.uptime_ticks, .tv_nsec = 0};
     struct timespec boot_time = timespec_subtract(timespec_now(CLOCK_REALTIME), uptime_ts);
     proc_printf(buf, "btime %ld\n", boot_time.tv_sec);
 
@@ -50,7 +51,7 @@ static int proc_show_cpuinfo(struct proc_entry *UNUSED(entry), struct proc_data 
 }
 
 static void show_kb(struct proc_data *buf, const char *name, uint64_t value) {
-    proc_printf(buf, "%s%8"PRIu64" kB\n", name, value / 1000);
+    proc_printf(buf, "%s%8"PRIu64" kB\n", name, value / 1024);
 }
 
 static int proc_show_meminfo(struct proc_entry *UNUSED(entry), struct proc_data *buf) {
@@ -62,13 +63,20 @@ static int proc_show_meminfo(struct proc_entry *UNUSED(entry), struct proc_data 
     #define MEMINFO_MAX_RAM (4ULL * 1024 * 1024 * 1024)
     if (usage.total > MEMINFO_MAX_RAM)
         usage.total = MEMINFO_MAX_RAM;
+#if ANON_MMAP_LIMIT_PAGES > 0
+    extern _Atomic long anon_page_count;
+    long used_pages = atomic_load(&anon_page_count);
+    uint64_t used_bytes = (uint64_t)(used_pages > 0 ? used_pages : 0) * 4096;
+    usage.free = used_bytes < usage.total ? usage.total - used_bytes : 0;
+#else
     if (usage.free > MEMINFO_MAX_RAM)
         usage.free = MEMINFO_MAX_RAM;
 #endif
+#endif
     show_kb(buf, "MemTotal:       ", usage.total);
     show_kb(buf, "MemFree:        ", usage.free);
-    show_kb(buf, "MemShared:      ", usage.free);
-    // a bunch of crap busybox top needs to see or else it gets stack garbage
+    show_kb(buf, "MemShared:      ", 0);
+    // a bunch of fields busybox top expects to see.
     show_kb(buf, "Shmem:          ", 0);
     show_kb(buf, "Buffers:        ", 0);
     show_kb(buf, "Cached:         ", 0);
@@ -85,7 +93,7 @@ static int proc_show_meminfo(struct proc_entry *UNUSED(entry), struct proc_data 
 static int proc_show_uptime(struct proc_entry *UNUSED(entry), struct proc_data *buf) {
     struct uptime_info uptime_info = get_uptime();
     unsigned long uptime = uptime_info.uptime_ticks;
-    proc_printf(buf, "%lu.%lu %lu.%lu\n", uptime / 100, uptime % 100, uptime / 100, uptime % 100);
+    proc_printf(buf, "%lu.00 %lu.00\n", uptime, uptime);
     return 0;
 }
 

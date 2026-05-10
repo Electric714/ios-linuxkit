@@ -1,13 +1,9 @@
 #include <sys/utsname.h>
+#include <stdint.h>
+#include <stdatomic.h>
 #include <string.h>
 #include "kernel/calls.h"
 #include "platform/platform.h"
-
-#if __APPLE__
-#include <sys/sysctl.h>
-#elif __linux__
-#include <sys/sysinfo.h>
-#endif
 
 #define SYSINFO_DEBUG 0
 
@@ -46,23 +42,25 @@ dword_t sys_sethostname(addr_t UNUSED(hostname_addr), dword_t UNUSED(hostname_le
     return _EPERM;
 }
 
-#if __APPLE__
-static uint64_t get_total_ram() {
-    uint64_t total_ram = 0;
-    size_t len = sizeof(total_ram);
-    sysctlbyname("hw.memsize", &total_ram, &len, NULL, 0);
-    return total_ram;
-}
 static void sysinfo_specific(struct sys_info *info) {
-    uint64_t total_ram = get_total_ram();
+    struct platform_sysinfo host_info = platform_get_sysinfo();
+    uint64_t host_mem_unit = host_info.mem_unit ? host_info.mem_unit : 1;
+    info->procs = host_info.procs;
+
 #if defined(GUEST_ARM64)
     // Cap reported RAM to avoid musl/V8 allocating enormous arenas.
     // Must be consistent with MEMINFO_MAX_RAM in fs/proc/root.c.
     // Go runtime needs ~1.1GB for page summaries; 4GB gives headroom.
-    #define GUEST_MAX_RAM (4ULL * 1024 * 1024 * 1024)
-    if (total_ram > GUEST_MAX_RAM)
-        total_ram = GUEST_MAX_RAM;
-    info->totalram = total_ram;
+#define GUEST_MAX_RAM (4ULL * 1024 * 1024 * 1024)
+    uint64_t total_bytes = host_info.totalram * host_mem_unit;
+    if (total_bytes > GUEST_MAX_RAM)
+        total_bytes = GUEST_MAX_RAM;
+    info->totalram = total_bytes;
+    info->sharedram = host_info.sharedram * host_mem_unit;
+    info->totalswap = host_info.totalswap * host_mem_unit;
+    info->freeswap = host_info.freeswap * host_mem_unit;
+    info->totalhigh = host_info.totalhigh * host_mem_unit;
+    info->freehigh = host_info.freehigh * host_mem_unit;
     info->mem_unit = 1;
 
     // Report realistic free memory based on anon_page_count.
@@ -71,36 +69,40 @@ static void sysinfo_specific(struct sys_info *info) {
     extern _Atomic long anon_page_count;
     long used_pages = atomic_load(&anon_page_count);
     uint64_t used_bytes = (uint64_t)(used_pages > 0 ? used_pages : 0) * 4096;
-    info->freeram = used_bytes < total_ram ? total_ram - used_bytes : 0;
+    info->freeram = used_bytes < total_bytes ? total_bytes - used_bytes : 0;
 #else
-    info->freeram = total_ram / 2;  // fallback: report 50% free
+    info->freeram = total_bytes / 2;  // fallback: report 50% free
 #endif
 #else
-    // For x86, scale down to 32-bit with mem_unit
-    if (total_ram > UINT32_MAX) {
-        info->mem_unit = (uint32_t)(total_ram / UINT32_MAX) + 1;
-        info->totalram = (uint32_t)(total_ram / info->mem_unit);
-    } else {
-        info->mem_unit = 1;
-        info->totalram = (uint32_t)total_ram;
-    }
+    uint64_t max_field = host_info.totalram;
+    if (host_info.freeram > max_field) max_field = host_info.freeram;
+    if (host_info.sharedram > max_field) max_field = host_info.sharedram;
+    if (host_info.totalswap > max_field) max_field = host_info.totalswap;
+    if (host_info.freeswap > max_field) max_field = host_info.freeswap;
+    if (host_info.totalhigh > max_field) max_field = host_info.totalhigh;
+    if (host_info.freehigh > max_field) max_field = host_info.freehigh;
+
+    uint64_t max_bytes = max_field * host_mem_unit;
+    uint64_t out_unit = 1;
+    if (max_bytes > UINT32_MAX)
+        out_unit = (max_bytes + UINT32_MAX - 1) / UINT32_MAX;
+
+#define SCALE_SYSINFO_FIELD(field) \
+    do { \
+        uint64_t bytes = host_info.field * host_mem_unit; \
+        info->field = (dword_t)(bytes / out_unit); \
+    } while (0)
+    SCALE_SYSINFO_FIELD(totalram);
+    SCALE_SYSINFO_FIELD(freeram);
+    SCALE_SYSINFO_FIELD(sharedram);
+    SCALE_SYSINFO_FIELD(totalswap);
+    SCALE_SYSINFO_FIELD(freeswap);
+    SCALE_SYSINFO_FIELD(totalhigh);
+    SCALE_SYSINFO_FIELD(freehigh);
+#undef SCALE_SYSINFO_FIELD
+    info->mem_unit = (dword_t)out_unit;
 #endif
 }
-#elif __linux__
-static void sysinfo_specific(struct sys_info *info) {
-    struct sysinfo host_info;
-    sysinfo(&host_info);
-    info->totalram = host_info.totalram;
-    info->freeram = host_info.freeram;
-    info->sharedram = host_info.sharedram;
-    info->totalswap = host_info.totalswap;
-    info->freeswap = host_info.freeswap;
-    info->procs = host_info.procs;
-    info->totalhigh = host_info.totalhigh;
-    info->freehigh = host_info.freehigh;
-    info->mem_unit = host_info.mem_unit;
-}
-#endif
 
 dword_t sys_sysinfo(addr_t info_addr) {
     struct sys_info info = {0};

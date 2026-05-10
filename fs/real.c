@@ -108,9 +108,9 @@ static void copy_stat(struct statbuf *fake_stat, struct stat *real_stat) {
     fake_stat->size = real_stat->st_size;
     fake_stat->blksize = real_stat->st_blksize;
     fake_stat->blocks = real_stat->st_blocks;
-    fake_stat->atime = real_stat->st_atime;
-    fake_stat->mtime = real_stat->st_mtime;
-    fake_stat->ctime = real_stat->st_ctime;
+    fake_stat->atime = platform_stat_atime_sec(real_stat);
+    fake_stat->mtime = platform_stat_mtime_sec(real_stat);
+    fake_stat->ctime = platform_stat_ctime_sec(real_stat);
     fake_stat->atime_nsec = platform_stat_atime_nsec(real_stat);
     fake_stat->mtime_nsec = platform_stat_mtime_nsec(real_stat);
     fake_stat->ctime_nsec = platform_stat_ctime_nsec(real_stat);
