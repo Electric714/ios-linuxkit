@@ -111,6 +111,14 @@ static int copy_task(struct task *task, dword_t flags, addr_t stack, addr_t ptid
             goto fail_free_fs;
     }
 
+    // Linux keeps sigaltstack state per thread. fork-style children inherit the
+    // parent's alternate stack, but clone(CLONE_VM) children (normal pthreads,
+    // including Go M threads) start with it disabled unless CLONE_VFORK is used.
+    if ((flags & CLONE_VM_) && !(flags & CLONE_VFORK_)) {
+        task->altstack = 0;
+        task->altstack_size = 0;
+    }
+
     struct tgroup *old_group = task->group;
     lock(&pids_lock);
     lock(&old_group->lock);

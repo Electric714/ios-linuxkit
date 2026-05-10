@@ -287,9 +287,10 @@ The coverage script currently exercises, in order:
 6. ARM64 signal `ucontext_t` layout and null-SIGSEGV delivery coverage;
 7. ARM64 `CCMP`/`CCMN` condition-code-15 (`NV`) coverage;
 8. ARM64 self-modifying-code/code-patch invalidation coverage;
-9. Go (`go version`, `go env`, `go tool compile`, `go run`, `go build`, `go test`);
-10. Bun (`bun --version`, local `file:` dependency install, TypeScript run, test, build);
-11. Node/npm (`node --version`, `node -e`, `npm --version`, `npm run`).
+9. Per-thread `sigaltstack` coverage for pthread/Go-style signal stacks;
+10. Go (`go version`, `go env`, `go tool compile`, `go run`, `go build`, `go test`);
+11. Bun (`bun --version`, local `file:` dependency install, TypeScript run, test, build);
+12. Node/npm (`node --version`, `node -e`, `npm --version`, `npm run`).
 
 Each run writes a Markdown report named
 `ish-arm64-runtime-coverage-YYYYMMDD-HHMMSS.md` under `REPORT_DIR`. The suite is
@@ -298,7 +299,7 @@ to debug, not as cases to skip.
 
 Current Linux-host status from this pass:
 
-- Latest staged run: **26 / 26 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260505-102146.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`).
+- Latest staged run: **27 / 27 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260510-040149.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`).
 - Non-trivial workload probes are grouped in [docs/ARM64_WORKLOAD_SMOKE_TESTS.md](docs/ARM64_WORKLOAD_SMOKE_TESTS.md): Bun/PiClaw, `rcarmo/go-gte`, and the Benchmarks Game rows.
 - C coverage is green: `gcc --version`, compile, and execute all pass.
 - SysV IPC coverage is green: shared memory and message queues work across `fork()`.
@@ -308,7 +309,7 @@ Current Linux-host status from this pass:
 - ARM64 conditional-compare coverage is green: `CCMP`/`CCMN` with condition code 15 (`NV`) now follows AArch64 hardware and performs the compare instead of taking the false-immediate path.
 - ARM64 self-modifying-code coverage is green: writes to a previously translated RWX page invalidate stale translated blocks before a subsequent indirect call executes the patched bytes.
 - Go coverage is green: `go version`, `go env`, `go tool compile`, `go run`,
-  `go build` + execute, and `go test` all pass.
+  `go build` + execute, `go test`, and Benchmarks Game Go 10/10 all pass; iSH now keeps `sigaltstack` state per thread so Go signal handlers use the correct M/thread signal stack.
 - Bun coverage is green: `bun --version`, local `file:` dependency install,
   TypeScript run, `bun test`, and `bun build` all pass. The local `file:`
   install allocator/free-list crash has been regression-tested with 50
@@ -475,7 +476,7 @@ Major milestones:
 2. **Instruction coverage**: 200+ ARM64 opcodes including full NEON/Crypto
 3. **48-bit address space**: 4-level page table, lazy reservations
 4. **Node.js support**: V8 guard pages, MAP_NORESERVE, binary patch, exit cleanup
-5. **Go support**: Signal frame alignment, sigreturn fixes, NZCV preservation
+5. **Go support**: Signal frame alignment, per-thread `sigaltstack`, sigreturn fixes, NZCV preservation
 6. **Rust/uv support**: FUTEX_WAIT_BITSET, PMULL, BFM, demand-mapped reads
 7. **Agent integration**: ISHShellExecutor, DebugServer, Native Offload, Bind Mounts
 8. **Stability**: 50+ bug fixes for concurrency, memory leaks, use-after-free, deadlocks

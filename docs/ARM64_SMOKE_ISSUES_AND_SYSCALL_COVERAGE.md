@@ -1,12 +1,12 @@
 # ARM64 smoke issues and syscall coverage appraisal
 
-Updated: 2026-05-08
+Updated: 2026-05-10
 
 ## Executive status
 
 The current ARM64 Linux-host fakefs is in a good core-runtime state:
 
-- Staged runtime coverage: **26 / 26 passing**.
+- Staged runtime coverage: **27 / 27 passing**.
 - Benchmarks Game core tier: **9 official language rows × 10 benchmarks = 90 / 90 runs passing**.
 - Java-equivalent probe: **10 / 10 passing** in HotSpot default mixed mode; interpreter fallback mode also passes.
 - Native compiler rows additionally build inside the guest: **GCC 10 / 10 builds**, **G++ 10 / 10 builds**.
@@ -18,6 +18,7 @@ The current ARM64 Linux-host fakefs is in a good core-runtime state:
 |---|---|---|---|
 | Python Benchmarks Game | `multiprocessing.SemLock` failed when `/dev/shm` did not exist. | Fakefs root did not provide the Linux-standard `/dev/shm` directory expected by musl/Python. | **Fixed**: iSH startup pre-creates `/dev/shm` with mode `1777`. |
 | Go/cgo Benchmarks Game probe | cgo/GMP `pidigits` compile failed with `failed to get exit status: Interrupted system call`. | iSH's internal bounded `wait4` polling timeout leaked to the guest as `EINTR`. | **Fixed**: internal `_ETIMEDOUT` is retried and no longer returned as guest `EINTR`. |
+| Go Benchmarks Game / signals | Transient `fatal: bad g in signal handler` at Go `binarytrees`. | `sigaltstack` state was stored in shared `sighand`, but Linux makes it per-thread. Go installs one signal stack per M/thread, so another thread could receive a signal on the wrong alternate stack. | **Fixed**: alternate signal stack state now lives on `task`; clone/fork inheritance follows Linux semantics; runtime coverage includes a pthread per-thread `sigaltstack` fixture. |
 | Ruby Benchmarks Game | Thread/fork-heavy `regexredux-ruby-3` was killed by `SAFETY-VALVE[poll]`. | Poll safety valve treated one polling thread as whole-process idleness while other guest threads were still doing CPU work. | **Fixed**: poll valve only fires when there are no live children and all threads are blocking. |
 | PHP Benchmarks Game | Fast official PHP variants failed in `shmop_*()` and `msg_*()` calls. | ARM64 direct SysV shared memory and message queue syscalls were stubs. | **Fixed**: implemented enough `shmget`/`shmctl`/`shmat`/`shmdt` and `msgget`/`msgctl`/`msgsnd`/`msgrcv` for forked worker result passing. Runtime coverage now includes a C SysV IPC across-`fork()` test. |
 | Bun/PiClaw smoke | Bun recursive copy attempted file-copy on directories and hit `ENOTSUP`. | `getdents64` returned `DT_UNKNOWN` instead of directory entry types. | **Fixed**: directory entry `d_type` is now reported. |
@@ -70,7 +71,7 @@ These are not blocking the current smoke set, but they frame the next coverage w
 
 | Priority | Gap | Why it matters |
 |---|---|---|
-| Medium/high | OpenJDK mixed-mode compiler/JIT | Java is not on the current Benchmarks Game site, but OpenJDK is a high-value runtime. Interpreter-mode Java equivalents pass; default mixed-mode `javac` can still fail in heavier compilation, so the remaining lane is JIT/compiler correctness rather than JVM startup. |
+| Closed for smoke scope | OpenJDK mixed-mode compiler/JIT | Default mixed-mode `java -version`, `javac Hello.java`, `java Hello`, and Java-equivalent Benchmarks Game pass after the `LDPSW` pair-load fix; keep larger HotSpot/JIT stress workloads as future expansion. |
 | Closed | SysV semaphores: `semget`, `semctl`, `semop`, `semtimedop` | Implemented and covered in staged runtime coverage. |
 | Closed | `signalfd4` | Implemented and covered with blocked-signal delivery through a signalfd. |
 | Closed | `memfd_create` | Implemented with anonymous realfs-backed temp fd semantics and covered with read/write/vector I/O. |
@@ -86,7 +87,7 @@ These are not blocking the current smoke set, but they frame the next coverage w
 
 For userland development workloads, ARM64 iSH is now past the fragile bring-up phase. The strongest evidence is that the same fakefs can run package installs, C/C++ compilation, Go/Bun/Node/Python/PHP/Perl/Ruby/Lua runtime rows, Java in HotSpot default mixed mode plus interpreter fallback mode, GMP/PCRE/APR/Boost/TBB-linked native code, `fork()` plus SysV IPC, and the go-gte numerical workload.
 
-The remaining risk is now concentrated less in common development syscalls and more in larger optional subsystems: `io_uring`, AIO, namespace/security/profiling APIs, and the remaining mixed-mode OpenJDK/HotSpot JIT/compiler lane. The highest-value incremental syscall gaps identified earlier have been closed and are now part of staged runtime coverage.
+The remaining risk is now concentrated less in common development syscalls and more in larger optional subsystems: `io_uring`, AIO, namespace/security/profiling APIs, and larger HotSpot/JIT stress workloads beyond the current smoke lane. The highest-value incremental syscall and signal-runtime gaps identified earlier have been closed and are now part of staged runtime coverage.
 
 ## 2026-05-04 high-value syscall gap closure
 

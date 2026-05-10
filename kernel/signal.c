@@ -17,7 +17,7 @@
 int xsave_extra = 0;
 int fxsave_extra = 0;
 static void sigmask_set(sigset_t_ set);
-static void altstack_to_user(struct sighand *sighand, struct stack_t_ *user_stack);
+static void altstack_to_user(struct task *task, struct stack_t_ *user_stack);
 
 struct signalfd_siginfo_ {
     uint32_t signo;
@@ -52,7 +52,7 @@ static const struct fd_ops signalfd_ops = {
     .getflags = signalfd_getflags,
     .setflags = signalfd_setflags,
 };
-static bool is_on_altstack(addr_t sp, struct sighand *sighand);
+static bool is_on_altstack(addr_t sp, struct task *task);
 
 static int signal_is_blockable(int sig) {
     return sig != SIGKILL_ && sig != SIGSTOP_;
@@ -381,7 +381,7 @@ static void setup_rt_sigframe(struct siginfo_ *info, struct rt_sigframe_ *frame)
     frame->info = *info;
     frame->uc.flags = 0;
     frame->uc.link = 0;
-    altstack_to_user(current->sighand, &frame->uc.stack);
+    altstack_to_user(current, &frame->uc.stack);
     setup_sigcontext(&frame->uc.mcontext, &current->cpu);
     frame->uc.sigmask = current->blocked;
 
@@ -495,8 +495,8 @@ static void receive_signal(struct sighand *sighand, struct siginfo_ *info) {
     current->cpu.eip = sighand->action[info->sig].handler;
     dword_t sp = current->cpu.esp;
 #endif
-    if (sighand->altstack && !is_on_altstack(sp, sighand)) {
-        sp = sighand->altstack + sighand->altstack_size;
+    if (current->altstack && !is_on_altstack(sp, current)) {
+        sp = current->altstack + current->altstack_size;
     }
     if (xsave_extra) {
         // do as the kernel does
@@ -702,10 +702,10 @@ int64_t sys_rt_sigreturn() {
 
     lock(&current->sighand->lock);
     // FIXME this duplicates logic from sys_sigaltstack
-    if (!is_on_altstack(sp, current->sighand) &&
+    if (!is_on_altstack(sp, current) &&
             frame.uc.stack.size >= MINSIGSTKSZ_) {
-        current->sighand->altstack = frame.uc.stack.stack;
-        current->sighand->altstack_size = frame.uc.stack.size;
+        current->altstack = frame.uc.stack.stack;
+        current->altstack_size = frame.uc.stack.size;
     }
     sigmask_set(frame.uc.sigmask);
     unlock(&current->sighand->lock);
@@ -1015,20 +1015,20 @@ int_t sys_signalfd4(int_t fd_no, addr_t mask_addr, size_t mask_size, int_t flags
     return f_install(fd, flags);
 }
 
-static bool is_on_altstack(addr_t sp, struct sighand *sighand) {
-    return sp > sighand->altstack && sp <= sighand->altstack + sighand->altstack_size;
+static bool is_on_altstack(addr_t sp, struct task *task) {
+    return task->altstack != 0 && sp > task->altstack && sp <= task->altstack + task->altstack_size;
 }
 
-static void altstack_to_user(struct sighand *sighand, struct stack_t_ *user_stack) {
-    user_stack->stack = sighand->altstack;
-    user_stack->size = sighand->altstack_size;
+static void altstack_to_user(struct task *task, struct stack_t_ *user_stack) {
+    user_stack->stack = task->altstack;
+    user_stack->size = task->altstack_size;
     user_stack->flags = 0;
-    if (sighand->altstack == 0)
+    if (task->altstack == 0)
         user_stack->flags |= SS_DISABLE_;
 #if defined(GUEST_ARM64)
-    if (is_on_altstack(current->cpu.sp, sighand))
+    if (is_on_altstack(current->cpu.sp, task))
 #else
-    if (is_on_altstack(current->cpu.esp, sighand))
+    if (is_on_altstack(current->cpu.esp, task))
 #endif
         user_stack->flags |= SS_ONSTACK_;
 }
@@ -1039,7 +1039,7 @@ dword_t sys_sigaltstack(addr_t ss_addr, addr_t old_ss_addr) {
     lock(&sighand->lock);
     if (old_ss_addr != 0) {
         struct stack_t_ old_ss;
-        altstack_to_user(sighand, &old_ss);
+        altstack_to_user(current, &old_ss);
         if (user_put(old_ss_addr, old_ss)) {
             unlock(&sighand->lock);
             return _EFAULT;
@@ -1047,9 +1047,9 @@ dword_t sys_sigaltstack(addr_t ss_addr, addr_t old_ss_addr) {
     }
     if (ss_addr != 0) {
 #if defined(GUEST_ARM64)
-        if (is_on_altstack(current->cpu.sp, sighand)) {
+        if (is_on_altstack(current->cpu.sp, current)) {
 #else
-        if (is_on_altstack(current->cpu.esp, sighand)) {
+        if (is_on_altstack(current->cpu.esp, current)) {
 #endif
             unlock(&sighand->lock);
             return _EPERM;
@@ -1060,14 +1060,15 @@ dword_t sys_sigaltstack(addr_t ss_addr, addr_t old_ss_addr) {
             return _EFAULT;
         }
         if (ss.flags & SS_DISABLE_) {
-            sighand->altstack = 0;
+            current->altstack = 0;
+            current->altstack_size = 0;
         } else {
             if (ss.size < MINSIGSTKSZ_) {
                 unlock(&sighand->lock);
                 return _ENOMEM;
             }
-            sighand->altstack = ss.stack;
-            sighand->altstack_size = ss.size;
+            current->altstack = ss.stack;
+            current->altstack_size = ss.size;
         }
     }
     unlock(&sighand->lock);

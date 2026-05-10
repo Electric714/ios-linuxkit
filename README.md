@@ -56,7 +56,7 @@ The first tranche centralizes FD-path lookup, stat timestamp fields, host random
 
 ## Current coverage status
 
-Latest staged runtime report: **26 / 26 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260505-102146.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`). Base shell/APK, C, SysV IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, and Node/npm are green in the Linux-host coverage harness.
+Latest staged runtime report: **27 / 27 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260510-040149.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`). Base shell/APK, C, SysV IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, and Node/npm are green in the Linux-host coverage harness.
 
 | Area | Status | Notes |
 |---|---:|---|
@@ -68,7 +68,7 @@ Latest staged runtime report: **26 / 26 passing** (`/workspace/tmp/ish-arm64-run
 | ARM64 CCMP/CCMN NV | Passing | Conditional compare now treats condition code 15 (`NV`) like AArch64 hardware does for these instructions: condition true, not false-immediate fallback. |
 | ARM64 self-modifying code | Passing | Guest writes to previously translated code pages invalidate stale translated blocks at block boundaries; required for JIT/code-patching workloads. |
 | Java/OpenJDK | Passing default mixed-mode smoke | OpenJDK 21 starts; default mixed-mode `javac Hello.java` and `java Hello` pass; Java-equivalent Benchmarks Game passes 10/10 in default mixed mode, with `JAVA_SMOKE_MODE=interpreter` still available as conservative fallback coverage. |
-| Go | Passing | `go version`, `go env`, `go tool compile`, `go run`, `go build`, and `go test` pass. |
+| Go | Passing | `go version`, `go env`, `go tool compile`, `go run`, `go build`, `go test`, and Benchmarks Game Go 10/10 pass; per-thread `sigaltstack` handling now matches Linux for Go signal stacks. |
 | Node/npm | Passing | `node -e`, `npm --version`, and `npm run` pass after mmap/reservation and `pwritev` fixes. |
 | Bun | Passing | `bun --version`, local `file:` dependency install, TypeScript run, `bun test`, and `bun build` all pass in the staged harness. |
 
@@ -85,7 +85,7 @@ Validated so far:
 - 20 consecutive `bun -e "console.log(1)"` repro runs passed.
 - `setTimeout`, a minimal `Bun.serve` + `wget`, and PiClaw's web server now respond inside the guest.
 - PiClaw workspace bootstrap no longer logs the `ENOTSUP ... copyfile` warning when seeding `.pi/skills`.
-- Staged runtime coverage is now **26 / 26 passing**, including SysV shared-memory/message-queue IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, plus Bun install, TypeScript run, test, and build.
+- Staged runtime coverage is now **27 / 27 passing**, including SysV shared-memory/message-queue IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, plus Bun install, TypeScript run, test, and build.
 
 ## Workload smoke tests
 
@@ -93,7 +93,7 @@ The current non-trivial workload results are grouped in [docs/ARM64_WORKLOAD_SMO
 
 Current highlights:
 
-- staged runtime coverage is **26 / 26 passing**;
+- staged runtime coverage is **27 / 27 passing**;
 - Bun + PiClaw now install/start far enough to serve the web UI and no longer hit the recursive `copyfile`/`ENOTSUP` bootstrap issue;
 - `rcarmo/go-gte` can now build, convert `gte-small.gtemodel` inside the guest, and complete `make run-go`; this exposed and fixed missing AdvSIMD `FCVTL`/`FCVTL2` support;
 - the Benchmarks Game core tier now has GCC, G++, Go, Python, Node.js, PHP, Perl, Ruby, and Lua rows passing, and the local Java-equivalent probe now passes 10/10 in HotSpot default mixed mode; all official language labels remain accounted for and tiered by Alpine aarch64 feasibility.

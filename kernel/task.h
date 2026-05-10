@@ -38,6 +38,11 @@ struct task {
 
     // locked by sighand->lock
     struct sighand *sighand;
+    // Linux sigaltstack state is per-thread, not shared with the signal-action
+    // table. Runtimes such as Go install one alternate signal stack per M/thread;
+    // sharing this through sighand corrupts signal delivery between threads.
+    addr_t altstack;
+    dword_t altstack_size;
     sigset_t_ blocked;
     sigset_t_ pending;
     sigset_t_ waiting; // if nonzero, an ongoing call to sigtimedwait is waiting on these

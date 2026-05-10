@@ -19,7 +19,7 @@ A workload belongs here when it exercises at least one of these boundaries:
 
 | Workload | Current status | Why it was chosen | Latest useful log/report |
 |---|---:|---|---|
-| Staged runtime coverage | Passing, 26/26 | Fast regression gate for shell, `apk`, tmp I/O, C, SysV IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, Node/npm. Catches broad syscall/runtime regressions before heavier probes. | `/workspace/tmp/ish-arm64-runtime-coverage-20260505-102146.md` |
+| Staged runtime coverage | Passing, 27/27 | Fast regression gate for shell, `apk`, tmp I/O, C, SysV IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, Node/npm. Catches broad syscall/runtime regressions before heavier probes. | `/workspace/tmp/ish-arm64-runtime-coverage-20260510-040149.md` |
 | Bun + PiClaw bootstrap/server | Passing for install/start/web listen | Exercises modern JS runtime behavior: high `mmap` reservations, JSC GC signaling/timers, recursive package/workspace copies, sockets, HTTP serving, and PiClaw's startup probes. | `/workspace/tmp/piclaw-yolo-run-enotsup-fixed.log` and exposed server logs |
 | `rcarmo/go-gte` | Model conversion, `go test ./...`, and `make run-go` passing; `make go-build` still has upstream missing `cmd/test_gte` | Exercises Go toolchain, Python wheels, safetensors/numpy model conversion, 128 MB binary model I/O, FP16→FP32 AdvSIMD conversion, NEON math kernels, and Go runtime scheduling. | `docs/GO_GTE_PROGRESS.md` |
 | Benchmarks Game suite | GCC, G++, Go, Python, Node.js, PHP, Perl, Ruby, and Lua rows passing 10/10; Java-equivalent probe passing 10/10 in default mixed mode and interpreter fallback mode; source/language feasibility mapped | Broad cross-language benchmark corpus covering allocation, recursion, numeric FP, regex/text throughput, big integers, stdout/stdin streams, native compilers, managed runtimes, native compilers, SIMD portability, IPC, shared memory, and package availability. | [BENCHMARKSGAME_MATRIX.md](BENCHMARKSGAME_MATRIX.md), [BENCHMARKSGAME_GCC_SMOKE.md](BENCHMARKSGAME_GCC_SMOKE.md), [BENCHMARKSGAME_GPP_SMOKE.md](BENCHMARKSGAME_GPP_SMOKE.md), [BENCHMARKSGAME_GO_SMOKE.md](BENCHMARKSGAME_GO_SMOKE.md), [BENCHMARKSGAME_PYTHON_SMOKE.md](BENCHMARKSGAME_PYTHON_SMOKE.md), [BENCHMARKSGAME_NODE_SMOKE.md](BENCHMARKSGAME_NODE_SMOKE.md), [BENCHMARKSGAME_PHP_SMOKE.md](BENCHMARKSGAME_PHP_SMOKE.md), [BENCHMARKSGAME_PERL_SMOKE.md](BENCHMARKSGAME_PERL_SMOKE.md), [BENCHMARKSGAME_RUBY_SMOKE.md](BENCHMARKSGAME_RUBY_SMOKE.md), [BENCHMARKSGAME_LUA_SMOKE.md](BENCHMARKSGAME_LUA_SMOKE.md), [BENCHMARKSGAME_JAVA_EQUIVALENT_SMOKE.md](BENCHMARKSGAME_JAVA_EQUIVALENT_SMOKE.md) |
@@ -35,14 +35,14 @@ make test-arm64-runtime-coverage REPORT_DIR=/workspace/tmp TIMEOUT_S=120 INSTALL
 Latest result:
 
 ```text
-26 / 26 passing
-report: /workspace/tmp/ish-arm64-runtime-coverage-20260505-102146.md
+27 / 27 passing
+report: /workspace/tmp/ish-arm64-runtime-coverage-20260510-040149.md
 ```
 
 Why it matters:
 
 - Establishes the guest can boot, run shell commands, update package indexes, and do basic file I/O.
-- Confirms C compile/execute, SysV shared-memory/message-queue IPC across `fork()`, and Go compile/run/build/test paths.
+- Confirms C compile/execute, SysV shared-memory/message-queue IPC across `fork()`, per-thread `sigaltstack`, and Go compile/run/build/test paths.
 - Keeps Bun and Node/npm smoke coverage in the standard gate so JS runtime regressions are caught quickly.
 
 ## Bun + PiClaw workload
@@ -196,10 +196,10 @@ Latest result:
 
 ```text
 10 / 10 passing
-report: /workspace/tmp/benchmarksgame-go-smoke-20260503-055307.md
+report: /workspace/tmp/benchmarksgame-go-smoke-20260510-035950.md
 ```
 
-The Go row intentionally chooses self-contained official Go variants for the first tier. Faster `pidigits` and `regexredux` variants that require cgo/GMP/PCRE are tracked as a separate cgo/toolchain stress pass. During manual probing, the cgo `pidigits` variant exposed `cc: fatal error: failed to get exit status: Interrupted system call` while compiling `runtime/cgo`; this was fixed by treating the internal 1-second `wait4` poll timeout as a timeout, not as a guest `EINTR`. A minimal cgo build and cgo/GMP `pidigits` now compile and run.
+The Go row intentionally chooses self-contained official Go variants for the first tier. Faster `pidigits` and `regexredux` variants that require cgo/GMP/PCRE are tracked as a separate cgo/toolchain stress pass. During manual probing, the cgo `pidigits` variant exposed `cc: fatal error: failed to get exit status: Interrupted system call` while compiling `runtime/cgo`; this was fixed by treating the internal 1-second `wait4` poll timeout as a timeout, not as a guest `EINTR`. A later transient `fatal: bad g in signal handler` was traced to process-shared `sigaltstack` state; iSH now stores alternate signal stacks per task/thread, matching Linux and Go runtime expectations. A minimal cgo build and cgo/GMP `pidigits` now compile and run.
 
 ### Python execution row
 
