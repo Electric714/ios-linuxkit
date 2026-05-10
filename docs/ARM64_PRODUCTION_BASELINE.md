@@ -40,11 +40,11 @@ Date: 2026-05-10
 
 ## Validation artifacts
 
-- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260510-101513.md`
+- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260510-102148.md`
   - Result: 28 / 28 passing
 - Go Benchmarks Game smoke: `/workspace/tmp/benchmarksgame-go-smoke-20260510-084223.md`
   - Result: 10 / 10 passing
-- Default mixed-mode Java Hello smoke: `/workspace/tmp/java-hello-barrier-audit-20260510.log`
+- Default mixed-mode Java Hello smoke: `/workspace/tmp/java-hello-sync-audit-20260510.log`
   - `javac_rc:0`
   - `java_rc:0`
 - Production baseline capture: `/workspace/tmp/ish-arm64-production-baseline-20260510.txt`

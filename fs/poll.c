@@ -418,8 +418,8 @@ int poll_wait(struct poll *poll_, poll_callback_t callback, void *context, struc
             }
         }
 
-        char fuck;
-        if (read(poll_->notify_pipe[0], &fuck, 1) < 0 && errno != EAGAIN) {
+        char notify_byte;
+        if (read(poll_->notify_pipe[0], &notify_byte, 1) < 0 && errno != EAGAIN) {
             res = errno_map();
             break;
         }
