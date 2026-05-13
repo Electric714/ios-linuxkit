@@ -256,7 +256,7 @@ Directory reads now propagate or infer Linux `DT_*` values:
 
 Validation: a minimal Bun recursive `fs.cpSync` directory tree copy succeeds,
 PiClaw no longer logs the bootstrap `ENOTSUP ... copyfile` warning, and staged
-runtime coverage remains **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-200331.md`).
+runtime coverage remains **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-203532.md`).
 
 ## Blocking I/O and exit cleanup
 
@@ -272,7 +272,10 @@ shutdown. The realfs read/write path, the fast small-buffer read path, and socke
 poll waits now retry spurious host `EINTR`, but surface `_EINTR` when the guest
 has a pending unblocked signal or the thread group is exiting. Socket waits also
 use a short poll interval so helper threads blocked in `recv`/`recvmsg` can
-observe `exit_group` promptly.
+observe `exit_group` promptly. A follow-up socket audit bounds Unix socket
+backing paths, removes guest-sized socket-option VLAs, validates returned
+address lengths, copies only actual `recvfrom` byte counts back to the guest,
+and clears released Unix-socket name references after failed `bind()` calls.
 
 `exit_group` now gives helper-heavy runtimes a longer bounded drain window before
 reporting stuck detached host threads. The staged Rust and Erlang version/codegen
@@ -329,7 +332,7 @@ This is not yet a full `host_*` layer, but it is a clear split:
 The next cleanup candidates are the remaining host branches that are implementation-specific and not on the Linux ARM64 Java production path:
 
 - native offload (`kernel/native_offload.c`) is Darwin/macOS-oriented by design;
-- polling/socket glue still has epoll/kqueue and socket-option ABI branches;
+- polling/socket glue still has epoll/kqueue ABI branches; socket-option buffer handling is now bounded in the common path but broader host-specific cleanup remains;
 - low-level synchronization keeps Linux monotonic `pthread_cond_timedwait` and Darwin relative-time waits separate.
 
 Keep these differences documented and narrow; move them behind platform helpers when a second call site or a correctness issue appears.

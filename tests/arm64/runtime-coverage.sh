@@ -176,11 +176,13 @@ EOF
 #include <errno.h>
 #include <fcntl.h>
 #include <mqueue.h>
+#include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/sem.h>
 #include <sys/signalfd.h>
 #include <sys/syscall.h>
@@ -197,6 +199,7 @@ int main(){
  sigset_t mask; sigemptyset(&mask); sigaddset(&mask,SIGUSR1); if(sigprocmask(SIG_BLOCK,&mask,NULL)<0) die("sigprocmask"); int sfd=signalfd(-1,&mask,SFD_CLOEXEC|SFD_NONBLOCK); if(sfd<0) die("signalfd"); kill(getpid(),SIGUSR1); struct signalfd_siginfo si; ssize_t sr; for(int i=0;i<100;i++){ sr=read(sfd,&si,sizeof(si)); if(sr==sizeof(si)) break; usleep(1000);} if(sr!=sizeof(si)||si.ssi_signo!=SIGUSR1) die("read signalfd"); close(sfd);
  int sem=semget(IPC_PRIVATE,1,IPC_CREAT|0600); if(sem<0) die("semget"); union semun u; u.val=1; if(semctl(sem,0,SETVAL,u)<0) die("semctl set"); struct sembuf ops[1]={{0,-1,0}}; if(semop(sem,ops,1)<0) die("semop -1"); if(semctl(sem,0,GETVAL,u)!=0) die("semctl get"); semctl(sem,0,IPC_RMID,u);
  struct mq_attr attr={.mq_maxmsg=4,.mq_msgsize=32}; mqd_t mq=mq_open("/gapmq",O_CREAT|O_RDWR|O_NONBLOCK,0600,&attr); if(mq==(mqd_t)-1) die("mq_open"); if(mq_send(mq,"hello",6,7)<0) die("mq_send"); unsigned pr=0; char mbuf[32]; ssize_t mr=mq_receive(mq,mbuf,sizeof(mbuf),&pr); if(mr!=6||strcmp(mbuf,"hello")||pr!=7) die("mq_receive"); mq_close(mq); mq_unlink("/gapmq");
+ int us=socket(AF_INET,SOCK_DGRAM|SOCK_CLOEXEC,0); if(us<0) die("socket udp"); int one=1; if(setsockopt(us,SOL_SOCKET,SO_REUSEADDR,&one,sizeof(one))<0) die("setsockopt reuseaddr"); int stype=0; socklen_t stype_len=sizeof(stype); if(getsockopt(us,SOL_SOCKET,SO_TYPE,&stype,&stype_len)<0||stype!=SOCK_DGRAM||stype_len!=sizeof(stype)) die("getsockopt type"); struct sockaddr_in a={.sin_family=AF_INET,.sin_addr.s_addr=htonl(INADDR_LOOPBACK),.sin_port=0}; if(bind(us,(struct sockaddr*)&a,sizeof(a))<0) die("bind udp"); socklen_t alen=sizeof(a); if(getsockname(us,(struct sockaddr*)&a,&alen)<0) die("getsockname udp"); if(sendto(us,"pong",4,0,(struct sockaddr*)&a,alen)!=4) die("sendto udp"); char rb[16]="XXXXXXXXXXXXXXX"; struct sockaddr_in src; socklen_t slen=sizeof(src); ssize_t rr=recvfrom(us,rb,sizeof(rb),0,(struct sockaddr*)&src,&slen); if(rr!=4||memcmp(rb,"pong",4)||rb[4]!='X'||slen>sizeof(src)) die("recvfrom udp"); close(us);
  char local[16]="self"; char out[16]={0}; struct iovec li={out,5}, ri={local,5}; ssize_t vr=syscall(SYS_process_vm_readv,getpid(),&li,1,&ri,1,0); if(vr!=5||strcmp(out,"self")) die("process_vm_readv"); char in[16]="that"; struct iovec liw={in,5}, riw={local,5}; ssize_t vw=syscall(SYS_process_vm_writev,getpid(),&liw,1,&riw,1,0); if(vw!=5||strcmp(local,"that")) die("process_vm_writev");
  puts("syscall-gaps-ok"); return 0;
 }

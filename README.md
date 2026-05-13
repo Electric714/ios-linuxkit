@@ -63,18 +63,18 @@ The current split centralizes FD-path lookup, stat timestamp fields, host random
 - Added small atomic repro sources under `tests/arm64/atomics/` for LDXP/STLXP, CAS128, and CLREX+STXR/STXP semantics.
 - Stopped advertising optional ARM64 crypto/LSE features in `AT_HWCAP` until those helper sets are fully coverage-clean; runtimes can fall back to baseline FP/ASIMD paths.
 - Hardened production-adjacent launch and logging paths found during the final audit: bounded `printk`/`die` formatting, exact comma-separated mount-option parsing, bounded initial argv construction, safe `PT_INTERP` path loading, safe shebang argument trimming, and safe `TERM` environment construction in `ptraceomatic`.
-- Added bounded path/symlink expansion checks, guest-signal-aware `EINTR` surfacing for blocking read/write/socket paths, and a longer exit-group drain window so runtime helper threads can unwind without safety-valve leaks.
+- Added bounded path/symlink expansion checks, removed stale path-normalization caching, hardened socket address/option/receive buffer handling, added guest-signal-aware `EINTR` surfacing for blocking read/write/socket paths, and kept a longer exit-group drain window so runtime helper threads can unwind without safety-valve leaks.
 - Extended user-readable ARM64 sysreg probes (`MIDR_EL1`, zero-valued feature/debug ID registers) and scalar FP16 conversion (`FCVT Sd,Hn` / `FCVT Dd,Hn`) for modern compiler/runtime CPU-feature paths.
 
 ## Current coverage status
 
-Latest staged runtime report: **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-200331.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`). Base shell/APK, C, SysV IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 DMB/DSB/ISB barrier coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, Node/npm, Python, Lua, Java, Clojure, PyPy/Swift availability probes, Rust, Erlang, and Zig are green in the Linux-host coverage harness. The current production package baseline is recorded in [docs/ARM64_PRODUCTION_BASELINE.md](docs/ARM64_PRODUCTION_BASELINE.md), and the local Linux production deployment/post-deploy Java smoke is recorded in [docs/ARM64_PRODUCTION_DEPLOYMENT.md](docs/ARM64_PRODUCTION_DEPLOYMENT.md).
+Latest staged runtime report: **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-203532.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`). Base shell/APK, C, SysV IPC, high-value syscall gap plus UDP/socket-option coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 DMB/DSB/ISB barrier coverage, ARM64 self-modifying-code invalidation coverage, Go, Bun, Node/npm, Python, Lua, Java, Clojure, PyPy/Swift availability probes, Rust, Erlang, and Zig are green in the Linux-host coverage harness. The current production package baseline is recorded in [docs/ARM64_PRODUCTION_BASELINE.md](docs/ARM64_PRODUCTION_BASELINE.md), and the local Linux production deployment/post-deploy Java smoke is recorded in [docs/ARM64_PRODUCTION_DEPLOYMENT.md](docs/ARM64_PRODUCTION_DEPLOYMENT.md).
 
 | Area | Status | Notes |
 |---|---:|---|
 | Base shell / apk / tmp I/O | Passing | Basic guest execution and filesystem operations are stable. |
 | C toolchain | Passing | `gcc` can compile and execute a simple program. |
-| SysV IPC | Passing | Shared memory and message queues work across `fork()` in the staged C coverage test. |
+| SysV IPC / socket ABI | Passing | Shared memory and message queues work across `fork()`; staged syscall coverage also validates UDP `sendto`/`recvfrom`, `getsockname`, `setsockopt`, and `getsockopt` buffer/length handling. |
 | ARM64 DC ZVA | Passing | `DCZID_EL0` reports a 64-byte block and `dc zva` zeros the expected aligned block. |
 | ARM64 signal ucontext | Passing | Guest SIGSEGV handlers now see Linux/musl-compatible `ucontext_t` (`uc_mcontext` offset 176), and null read faults are delivered instead of synthesized as zero loads. |
 | ARM64 CCMP/CCMN NV | Passing | Conditional compare now treats condition code 15 (`NV`) like AArch64 hardware does for these instructions: condition true, not false-immediate fallback. |
@@ -103,7 +103,7 @@ Validated so far:
 - 20 consecutive `bun -e "console.log(1)"` repro runs passed.
 - `setTimeout`, a minimal `Bun.serve` + `wget`, and PiClaw's web server now respond inside the guest.
 - PiClaw workspace bootstrap no longer logs the `ENOTSUP ... copyfile` warning when seeding `.pi/skills`.
-- Staged runtime coverage is now **49 / 49 passing**, including SysV shared-memory/message-queue IPC, high-value syscall gap coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 DMB/DSB/ISB barrier coverage, ARM64 self-modifying-code invalidation coverage, plus Bun install, TypeScript run, test, and build, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
+- Staged runtime coverage is now **49 / 49 passing**, including SysV shared-memory/message-queue IPC, high-value syscall gap plus UDP/socket-option coverage, ARM64 DC ZVA coverage, ARM64 signal-ucontext and per-thread `sigaltstack` coverage, ARM64 CCMP/CCMN NV-condition coverage, ARM64 DMB/DSB/ISB barrier coverage, ARM64 self-modifying-code invalidation coverage, plus Bun install, TypeScript run, test, and build, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
 
 ## Workload smoke tests
 
