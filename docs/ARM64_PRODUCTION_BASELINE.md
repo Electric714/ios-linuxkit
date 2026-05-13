@@ -47,9 +47,9 @@ Reviewed: 2026-05-13
 
 ## Validation artifacts
 
-- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260513-182526.md`
-  - Result: 44 / 44 passing
-  - Includes no-safety-valve Rust/Erlang helper-thread cleanup validation and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
+- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260513-200331.md`
+  - Result: 49 / 49 passing
+  - Includes no-safety-valve/no-NETDIAG Rust Cargo/std coverage, Erlang helper-thread cleanup validation, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
 - Go Benchmarks Game smoke: `/workspace/tmp/benchmarksgame-go-smoke-20260513-144802.md`
   - Result: 10 / 10 passing
 - Default mixed-mode Java Hello smoke: `/workspace/tmp/java-hello-audit-r5-20260512.log`

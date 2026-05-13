@@ -757,13 +757,6 @@ int_t sys_recvfrom(fd_t sock_fd, addr_t buffer_addr, dword_t len, dword_t flags,
     // should wait do we fall back to the bounded-poll wait.
     ssize_t res;
     if (should_wait) {
-        // Diagnostic: a blocking recv is exceptional for most network
-        // programs (Node, Go, Python asyncio all use nonblock). Log it so
-        // we can see the guest/host fd state in user-shared logs.
-        printk("NETDIAG recvfrom-block(pid=%d comm=%s fd=%d real=%d len=%u gflags=%#x hflags=%#x sflags=%#x)\n",
-               current->pid, current->comm, sock_fd, sock->real_fd,
-               (unsigned)len, (unsigned)flags,
-               host_flags, sock->flags);
         for (;;) {
             res = recvfrom(sock->real_fd, buffer, len, real_flags | MSG_DONTWAIT,
                     sockaddr_addr != 0 ? (void *) sockaddr : NULL,
@@ -1266,9 +1259,6 @@ int_t sys_recvmsg(fd_t sock_fd, addr_t msghdr_addr, int_t flags) {
     ssize_t res = -1;
     int err = 0;
     if (should_wait_rm) {
-        printk("NETDIAG recvmsg-block(pid=%d comm=%s fd=%d real=%d gflags=%#x hflags=%#x sflags=%#x)\n",
-               current->pid, current->comm, sock_fd, sock->real_fd,
-               (unsigned)flags, host_flags_rm, sock->flags);
         for (;;) {
             res = recvmsg(sock->real_fd, &msg, real_flags | MSG_DONTWAIT);
             if (res >= 0)

@@ -295,7 +295,7 @@ The coverage script currently exercises, in order:
 14. Python (`python3 --version`, eval) and Lua (`lua5.4 -v`, eval);
 15. Java (`javac` + default mixed-mode `java`, interpreter fallback) and Clojure (`clojure.main` eval);
 16. PyPy and Swift Alpine aarch64 availability probes;
-17. Rust (`rustc --version`, direct compile/run, `rustc --test` unit-test execution);
+17. Rust (`rustc --version`, direct compile/run, optimized std runtime, `rustc --test`, Cargo build/run/test with threads, atomics, channels, file I/O, TCP loopback, and child processes);
 18. Erlang (`erl -version` BEAM startup smoke);
 19. Zig (`zig version`, `zig build-obj`, linked object execution through a C harness).
 
@@ -306,7 +306,7 @@ to debug, not as cases to skip.
 
 Current Linux-host status from this pass:
 
-- Latest staged run: **44 / 44 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-182526.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`).
+- Latest staged run: **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-200331.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=300`).
 - Production package baseline: [docs/ARM64_PRODUCTION_BASELINE.md](docs/ARM64_PRODUCTION_BASELINE.md) (`alpine-arm64-fakefs` on Alpine 3.23.4 with OpenJDK 21.0.10_p7-r0; current audit tag `arm64-openjdk21-prod-20260510-r5`).
 - Non-trivial workload probes are grouped in [docs/ARM64_WORKLOAD_SMOKE_TESTS.md](docs/ARM64_WORKLOAD_SMOKE_TESTS.md): Bun/PiClaw, `rcarmo/go-gte`, and the Benchmarks Game rows.
 - C coverage is green: `gcc --version`, compile, and execute all pass.
@@ -333,10 +333,7 @@ Current Linux-host status from this pass:
   Java interpreter fallback, and `clojure.main` eval all pass.
 - PyPy and Swift availability probes are green by recording that Alpine 3.23
   aarch64 currently has no packaged PyPy or Swift toolchain in the index.
-- Rust coverage is green for direct `rustc` paths: version, compile/run, and
-  `rustc --test` unit-test execution pass without safety-valve leaks. Cargo is
-  intentionally not in the default gate yet pending a separate cargo-focused
-  workload.
+- Rust coverage is green for direct `rustc` and Cargo paths: version, compile/run, optimized std runtime, `rustc --test`, Cargo build/run/test, threads, atomics, channels, file I/O, TCP loopback, and child processes pass without safety-valve or NETDIAG noise.
 - Erlang coverage is green for BEAM startup/version (`erl -version`). Fuller
   `erl -noshell`/`erlc` module execution remains follow-up work.
 - Zig coverage is green for compiler/object paths: version, `zig build-obj`, and

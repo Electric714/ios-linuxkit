@@ -544,38 +544,184 @@ edition = "2021"
 
 [profile.dev]
 debug = 0
+
+[profile.release]
+debug = 0
 EOF
     cat >"$dir/src/lib.rs" <<'EOF'
+use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::path::Path;
+use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
+
 pub fn checksum(input: &[u8]) -> u64 {
     input.iter().fold(0u64, |acc, b| acc.wrapping_mul(131).wrapping_add(*b as u64))
 }
 
+pub fn threaded_sum() -> u64 {
+    let acc = Arc::new(AtomicU64::new(0));
+    let seen = Arc::new(Mutex::new(Vec::new()));
+    let mut handles = Vec::new();
+    for worker in 0..4u64 {
+        let acc = Arc::clone(&acc);
+        let seen = Arc::clone(&seen);
+        handles.push(thread::spawn(move || {
+            let start = worker * 250 + 1;
+            let end = start + 249;
+            let subtotal: u64 = (start..=end).sum();
+            acc.fetch_add(subtotal, Ordering::SeqCst);
+            seen.lock().unwrap().push(worker);
+        }));
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    let mut workers = seen.lock().unwrap().clone();
+    workers.sort_unstable();
+    assert_eq!(workers, vec![0, 1, 2, 3]);
+    acc.load(Ordering::SeqCst)
+}
+
+pub fn channel_roundtrip() -> String {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || tx.send("rust-channel-ok".to_string()).unwrap()).join().unwrap();
+    rx.recv().unwrap()
+}
+
+pub fn file_roundtrip(path: &Path) -> std::io::Result<String> {
+    fs::write(path, b"rust-file-ok\n")?;
+    let text = fs::read_to_string(path)?;
+    let meta = fs::metadata(path)?;
+    assert_eq!(meta.len(), text.len() as u64);
+    Ok(text.trim().to_string())
+}
+
+pub fn tcp_loopback() -> std::io::Result<String> {
+    let listener = TcpListener::bind("127.0.0.1:0")?;
+    let addr = listener.local_addr()?;
+    let server = thread::spawn(move || -> std::io::Result<()> {
+        let (mut stream, _) = listener.accept()?;
+        let mut buf = [0u8; 4];
+        stream.read_exact(&mut buf)?;
+        assert_eq!(&buf, b"ping");
+        stream.write_all(b"pong")?;
+        Ok(())
+    });
+    let mut client = TcpStream::connect(addr)?;
+    client.write_all(b"ping")?;
+    let mut reply = [0u8; 4];
+    client.read_exact(&mut reply)?;
+    server.join().unwrap()?;
+    Ok(String::from_utf8(reply.to_vec()).unwrap())
+}
+
+pub fn child_process() -> std::io::Result<String> {
+    let output = Command::new("/bin/sh").arg("-c").arg("printf rust-child-ok").output()?;
+    assert!(output.status.success());
+    Ok(String::from_utf8(output.stdout).unwrap())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::checksum;
+    use super::*;
+    use std::path::PathBuf;
 
     #[test]
     fn checksum_is_stable() {
         assert_eq!(checksum(b"rust-runtime"), 9534429477999140727);
+        assert_eq!(checksum(b"abc"), 1677554);
+    }
+
+    #[test]
+    fn std_thread_channel_and_process_work() {
+        assert_eq!(threaded_sum(), 500500);
+        assert_eq!(channel_roundtrip(), "rust-channel-ok");
+        assert_eq!(child_process().unwrap(), "rust-child-ok");
+    }
+
+    #[test]
+    fn std_file_and_tcp_work() {
+        let path = PathBuf::from("/tmp/runtime-coverage/rust/file-roundtrip.txt");
+        assert_eq!(file_roundtrip(&path).unwrap(), "rust-file-ok");
+        assert_eq!(tcp_loopback().unwrap(), "pong");
     }
 }
 EOF
     cat >"$dir/src/main.rs" <<'EOF'
-fn main() {
+use std::path::Path;
+
+fn main() -> std::io::Result<()> {
     let value = runtime_coverage::checksum(b"rust-runtime");
-    println!("rust-runtime-ok {value}");
+    let threaded = runtime_coverage::threaded_sum();
+    let channel = runtime_coverage::channel_roundtrip();
+    let file = runtime_coverage::file_roundtrip(Path::new("/tmp/runtime-coverage/rust/main-file.txt"))?;
+    let tcp = runtime_coverage::tcp_loopback()?;
+    let child = runtime_coverage::child_process()?;
+    println!("rust-runtime-ok {value} {threaded} {channel} {file} {tcp} {child}");
+    Ok(())
 }
 EOF
     cat >"$dir/hello.rs" <<'EOF'
+use std::collections::BTreeMap;
+
 fn main() {
     let sum: u64 = (1..=100).sum();
-    println!("rustc-runtime-ok {sum}");
+    let mut map = BTreeMap::new();
+    map.insert("sum", sum);
+    map.insert("double", sum * 2);
+    println!("rustc-runtime-ok {} {}", map["sum"], map["double"]);
+}
+EOF
+    cat >"$dir/std_runtime.rs" <<'EOF'
+use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::process::Command;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::thread;
+
+fn main() -> std::io::Result<()> {
+    let total = Arc::new(AtomicUsize::new(0));
+    let mut handles = Vec::new();
+    for i in 0..8usize {
+        let total = Arc::clone(&total);
+        handles.push(thread::spawn(move || total.fetch_add(i * i, Ordering::SeqCst)));
+    }
+    for h in handles { h.join().unwrap(); }
+    fs::write("/tmp/runtime-coverage/rust/std-runtime.txt", b"rust-std-file-ok")?;
+    let file_text = fs::read_to_string("/tmp/runtime-coverage/rust/std-runtime.txt")?;
+    let listener = TcpListener::bind("127.0.0.1:0")?;
+    let addr = listener.local_addr()?;
+    let server = thread::spawn(move || -> std::io::Result<()> {
+        let (mut s, _) = listener.accept()?;
+        let mut b = [0; 3];
+        s.read_exact(&mut b)?;
+        s.write_all(b"ack")
+    });
+    let mut client = TcpStream::connect(addr)?;
+    client.write_all(b"hey")?;
+    let mut reply = [0; 3];
+    client.read_exact(&mut reply)?;
+    server.join().unwrap()?;
+    let child = Command::new("/bin/sh").arg("-c").arg("printf child").output()?;
+    assert_eq!(total.load(Ordering::SeqCst), 140);
+    assert_eq!(file_text, "rust-std-file-ok");
+    assert_eq!(&reply, b"ack");
+    assert_eq!(String::from_utf8(child.stdout).unwrap(), "child");
+    println!("rust-std-ok");
+    Ok(())
 }
 EOF
     cat >"$dir/tests/smoke.rs" <<'EOF'
 #[test]
 fn integration_smoke() {
     assert_eq!(runtime_coverage::checksum(b"abc"), 1677554);
+    assert_eq!(runtime_coverage::threaded_sum(), 500500);
 }
 EOF
     push_tree "$dir" "$GUEST_WORK/rust"
@@ -672,6 +818,7 @@ main() {
     run_test base "shell" "echo shell-ok | grep -qx shell-ok"
     run_test base "apk" "apk --version >/dev/null 2>&1"
     run_test base "tmp file io" "echo file-ok > '$GUEST_WORK/base.txt' && grep -qx file-ok '$GUEST_WORK/base.txt'"
+    run_test base "symlink retarget normalization" "mkdir -p '$GUEST_WORK/path-cache' && cd '$GUEST_WORK/path-cache' && echo old > old.txt && echo new > new.txt && ln -sf old.txt current && grep -qx old current && ln -sf new.txt current && grep -qx new current"
 
     ensure_tools build-base:gcc
     prepare_c_fixture
@@ -720,11 +867,15 @@ main() {
     run_test pypy "availability probe" "if command -v pypy3 >/dev/null 2>&1; then pypy3 -c 'print(\"pypy-runtime-ok\")' | grep -qx pypy-runtime-ok; else ! apk search pypy | grep -E '(^|-)pypy3?(-|$)' && echo pypy-unavailable-alpine-aarch64; fi"
     run_test swift "availability probe" "if command -v swift >/dev/null 2>&1; then swift --version; elif command -v swiftc >/dev/null 2>&1; then swiftc --version; else ! apk search swift | grep -E '(^|-)swift(c)?(-|$)' && echo swift-unavailable-alpine-aarch64; fi"
 
-    ensure_tools rust:rustc
+    ensure_tools rust:rustc cargo
     prepare_rust_fixture
     run_test rust "rustc version" "rustc --version"
-    run_test rust "rustc compile + run" "cd '$GUEST_WORK/rust' && rustc hello.rs -o rustc_app && ./rustc_app | grep -qx 'rustc-runtime-ok 5050'"
-    run_test rust "rustc unit tests" "cd '$GUEST_WORK/rust' && rustc --test src/lib.rs -o lib_tests && ./lib_tests --quiet"
+    run_test rust "rustc compile + run" "cd '$GUEST_WORK/rust' && rustc hello.rs -o rustc_app && ./rustc_app | grep -qx 'rustc-runtime-ok 5050 10100'"
+    run_test rust "rustc optimized std runtime" "cd '$GUEST_WORK/rust' && rustc -O std_runtime.rs -o rust_std && ./rust_std | grep -qx rust-std-ok"
+    run_test rust "rustc unit tests" "cd '$GUEST_WORK/rust' && rustc --test src/lib.rs -o lib_tests && RUST_TEST_THREADS=1 ./lib_tests --quiet"
+    run_test rust "cargo build" "cd '$GUEST_WORK/rust' && cargo build --quiet"
+    run_test rust "cargo run" "cd '$GUEST_WORK/rust' && cargo run --quiet | grep -q '^rust-runtime-ok 9534429477999140727 500500 rust-channel-ok rust-file-ok pong rust-child-ok$'"
+    run_test rust "cargo test" "cd '$GUEST_WORK/rust' && RUST_TEST_THREADS=1 cargo test --quiet --jobs 1"
 
     ensure_tools erlang:erl
     prepare_erlang_fixture

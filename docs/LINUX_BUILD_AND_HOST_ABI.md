@@ -140,7 +140,7 @@ Validation after the fix:
 
 - `make build-arm64-linux-all` passes.
 - 50 consecutive minimal Bun local `file:` install repro runs passed.
-- staged runtime coverage is now **44 / 44 passing** after subsequent syscall, signal, Java, barrier, Python/Lua/Clojure, Rust, Erlang, Zig, and runtime fixture additions.
+- staged runtime coverage is now **49 / 49 passing** after subsequent syscall, signal, Java, barrier, Python/Lua/Clojure, Rust, Erlang, Zig, and runtime fixture additions.
 
 
 ## JavaScriptCore GC compatibility shims
@@ -256,7 +256,7 @@ Directory reads now propagate or infer Linux `DT_*` values:
 
 Validation: a minimal Bun recursive `fs.cpSync` directory tree copy succeeds,
 PiClaw no longer logs the bootstrap `ENOTSUP ... copyfile` warning, and staged
-runtime coverage remains **44 / 44 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-182526.md`).
+runtime coverage remains **49 / 49 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260513-200331.md`).
 
 ## Blocking I/O and exit cleanup
 
@@ -276,7 +276,9 @@ observe `exit_group` promptly.
 
 `exit_group` now gives helper-heavy runtimes a longer bounded drain window before
 reporting stuck detached host threads. The staged Rust and Erlang version/codegen
-smokes now pass without `SAFETY-VALVE` diagnostics.
+smokes now pass without `SAFETY-VALVE` diagnostics; normal blocking
+`recvfrom`/`recvmsg` paths no longer emit stale `NETDIAG` lines in clean
+smoke logs.
 
 ## Current ABI shape
 
