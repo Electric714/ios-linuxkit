@@ -1081,6 +1081,14 @@ out:
     return ret;
 }
 
+#ifdef GUEST_ARM64
+#define cmsghdr_guest cmsghdr64_
+#define CMSG_NXTHDR_GUEST CMSG_NXTHDR64_
+#else
+#define cmsghdr_guest cmsghdr_
+#define CMSG_NXTHDR_GUEST CMSG_NXTHDR_
+#endif
+
 static void scm_free(struct scm *scm) {
     for (unsigned i = 0; i < scm->num_fds; i++)
         fd_close(scm->fds[i]);
@@ -1192,15 +1200,15 @@ int_t sys_sendmsg(fd_t sock_fd, addr_t msghdr_addr, int_t flags) {
         // figure out how many file descriptors we're sending
         uint8_t *mhdr_end = msg_control + msg_fake.msg_controllen;
         unsigned num_fds = 0;
-        struct cmsghdr_ *cmsg;
-        for (cmsg = (void *) msg_control; cmsg != NULL; cmsg = CMSG_NXTHDR_(cmsg, mhdr_end)) {
+        struct cmsghdr_guest *cmsg;
+        for (cmsg = (void *) msg_control; cmsg != NULL; cmsg = CMSG_NXTHDR_GUEST(cmsg, mhdr_end)) {
             if (cmsg->level != SOL_SOCKET_)
                 continue;
             if (cmsg->type != SCM_RIGHTS_) {
                 err = _EINVAL;
                 goto out_free_iov;
             }
-            num_fds += (cmsg->len - sizeof(struct cmsghdr_)) / sizeof(fd_t);
+            num_fds += (cmsg->len - sizeof(struct cmsghdr_guest)) / sizeof(fd_t);
         }
         if (num_fds > 253) { // *magic*
             err = _EINVAL;
@@ -1231,11 +1239,11 @@ int_t sys_sendmsg(fd_t sock_fd, addr_t msghdr_addr, int_t flags) {
             list_init(&scm->queue);
             scm->num_fds = 0;
             unsigned fd_i = 0;
-            for (cmsg = (void *) msg_control; cmsg != NULL; cmsg = CMSG_NXTHDR_(cmsg, mhdr_end)) {
+            for (cmsg = (void *) msg_control; cmsg != NULL; cmsg = CMSG_NXTHDR_GUEST(cmsg, mhdr_end)) {
                 if (cmsg->level != SOL_SOCKET_)
                     continue;
                 fd_t *fds = (void *) cmsg->data;
-                for (unsigned i = 0; i < (cmsg->len - sizeof(struct cmsghdr_)) / sizeof(fd_t); i++) {
+                for (unsigned i = 0; i < (cmsg->len - sizeof(struct cmsghdr_guest)) / sizeof(fd_t); i++) {
                     STRACE(" sending fd %d", fds[i]);
                     struct fd *send_fd = f_get(fds[i]);
                     if (send_fd == NULL) {
@@ -1454,6 +1462,7 @@ int_t sys_recvmsg(fd_t sock_fd, addr_t msghdr_addr, int_t flags) {
         return err;
 
     // msg_control (changed)
+    uint_t msg_control_buffer_len = msg_fake.msg_controllen;
     msg_fake.msg_controllen = 0;
     struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
     if (sock->socket.domain == AF_LOCAL_ && cmsg != NULL &&
@@ -1472,19 +1481,40 @@ int_t sys_recvmsg(fd_t sock_fd, addr_t msghdr_addr, int_t flags) {
             return err;
         }
 
-        uint8_t msg_control[sizeof(struct cmsghdr_) + scm->num_fds * sizeof(fd_t)];
-        struct cmsghdr_ *cmsg = (void *) msg_control;
+        uint8_t msg_control[sizeof(struct cmsghdr_guest) + scm->num_fds * sizeof(fd_t)];
+        struct cmsghdr_guest *cmsg = (void *) msg_control;
         cmsg->len = sizeof(msg_control);
         cmsg->level = SOL_SOCKET_;
         cmsg->type = SCM_RIGHTS_;
+        if (msg_fake.msg_control == 0 || msg_control_buffer_len < cmsg->len) {
+            scm_free(scm);
+            return _EINVAL;
+        }
+        fd_t installed_fds[253];
+        unsigned installed_count = 0;
         fd_t *fds = (void *) cmsg->data;
         for (unsigned i = 0; i < scm->num_fds; i++) {
             fds[i] = f_install(scm->fds[i], 0);
             STRACE(" receiving fd %d", fds[i]);
+            if (fds[i] < 0) {
+                for (unsigned j = 0; j < installed_count; j++)
+                    sys_close(installed_fds[j]);
+                for (unsigned j = i + 1; j < scm->num_fds; j++)
+                    fd_close(scm->fds[j]);
+                int install_err = fds[i];
+                free(scm);
+                return install_err;
+            }
+            installed_fds[installed_count++] = fds[i];
         }
-        if (user_write(msg_fake.msg_control, cmsg, cmsg->len))
+        if (user_write(msg_fake.msg_control, cmsg, cmsg->len)) {
+            for (unsigned i = 0; i < installed_count; i++)
+                sys_close(installed_fds[i]);
+            free(scm);
             return _EFAULT;
-        msg_fake.msg_controllen = msg.msg_controllen;
+        }
+        free(scm);
+        msg_fake.msg_controllen = cmsg->len;
     }
 
     // by now the iovecs and scm have been freed so we can return
