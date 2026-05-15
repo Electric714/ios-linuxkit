@@ -75,25 +75,45 @@ Rules:
 
 ## Phase 2: memory-adjacent fusions
 
-After Phase 1 validation, add fusions that reduce dispatch around hot object/array accesses:
+Precise fault-PC metadata has been verified for regular ARM64 load/store faults:
 
-- simple address-generation + load;
-- simple address-generation + store;
-- load + compare/test + branch.
+- `gadget_set_jit_saved_pc` is emitted before each `INSN_LD_ST` in `asbestos/guest-arm64/gen.c`.
+- Regular TLB-miss paths in `gadgets-aarch64/gadgets.h` restore `CPU_pc` from `LOCAL_jit_saved_pc` before returning `INT_GPF`.
+- Host SIGSEGV recovery in `main.c` also restores `CPU_pc` from `LOCAL_jit_saved_pc` where available.
+- Runtime fixture `arm64 precise fault pc` verifies a guest SIGSEGV handler observes the exact faulting `LDR` and `STR` instruction PCs, not the containing block/function. Full coverage report: `/workspace/tmp/ish-arm64-runtime-coverage-20260515-224825.md`, **51 / 51 passing**.
 
-Each memory sub-operation in a fused gadget must either set `LOCAL_jit_saved_pc` before the memory access or carry equivalent per-op fault metadata, so page faults and guest signals report the correct guest PC.
+Phase 2 may now be planned, but each fused memory gadget must carry the same precision guarantee. The safe initial allow-list is intentionally narrow:
+
+1. `ADD/SUB (imm, no flags) -> LDR/STR unsigned-offset` when:
+   - both instructions are adjacent and same page;
+   - the address-generation result register is used only as the memory base;
+   - no SP destination/source ambiguity unless a dedicated SP-safe gadget is written;
+   - the fused gadget stores the address-generation result before the memory op if the original pair would have architecturally written it before faulting.
+2. `ADRP+ADD -> LDR64` variants only when the currently fused `ADRP+LDR64` and `ADRP+ADD` semantics do not cover the pattern, and when the memory instruction remains the only faultable operation.
+3. `LDR (integer, non-exclusive) -> CBZ/CBNZ` only after adding per-op metadata in the fused gadget so a fault reports the `LDR` PC, while a successful load branches from the `CBZ/CBNZ` PC/fallthrough model.
+
+Explicit Phase 2 deny-list until separately proven:
+
+- atomics/exclusive monitor instructions (`LDXR/STXR`, pair exclusives, CAS/CASP);
+- SIMD interleaved loads/stores and multi-register memory ops;
+- pre-index/post-index addressing modes where writeback ordering on fault is subtle;
+- fusions spanning barriers, `SVC`, indirect branches, page boundaries, or self-modifying-code hazards;
+- any memory fusion where the earlier instruction has guest-visible side effects that would be lost if the memory operation faults.
+
+Implementation requirement: every fused memory sub-operation must emit/set a fault-PC slot for the specific faultable guest instruction before touching guest memory. If the fused gadget contains more than one faultable memory access, it needs per-access metadata, not a single block-level saved PC.
 
 ## Phase 3: linear superblocks
 
-Build small same-page linear superblocks without profiling:
+Phase 3 should wait until the Phase 1 fusion tranche is stable across repeated Node/Bun and core runtime runs. Initial design remains same-page and conservative:
 
 - max 2-4 basic blocks;
 - max 32-64 guest instructions;
 - direct known branch/fallthrough only;
 - same page initially;
-- stop at syscall, indirect branch, barrier/atomic, page boundary, or any instruction with uncertain invalidation/fault behavior.
+- stop at syscall, indirect branch, barrier/atomic, page boundary, or any instruction with uncertain invalidation/fault behavior;
+- stop before memory-adjacent fused gadgets unless their per-op fault metadata has a targeted regression test.
 
-Use the existing page-index invalidation path: every page touched by a superblock must invalidate that superblock.
+Use the existing page-index invalidation path: every page touched by a superblock must invalidate that superblock. For Phase 3A, require a single touched page and no new invalidation data structure. For Phase 3B, allow multi-page superblocks only after adding an explicit page-list/back-reference invalidation test.
 
 ## Phase 4: hot traces
 
@@ -110,7 +130,7 @@ For each implementation tranche:
 
 1. `make build-arm64-linux`.
 2. Short Bun/Node perf-table run for before/after numbers.
-3. Core Alpine runtime coverage (`49/49`).
+3. Core Alpine runtime coverage (all current Alpine checks passing).
 4. Targeted Bun/Node rows from runtime coverage.
 5. AI CLI npm lane when changes affect JSC/V8 mmap/fault behavior.
 

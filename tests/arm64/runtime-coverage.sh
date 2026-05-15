@@ -533,6 +533,100 @@ int main(void) {
 }
 EOF
 
+    cat >"$dir/precise_fault_pc.c" <<'EOF'
+#define _GNU_SOURCE
+#include <signal.h>
+#include <setjmp.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <ucontext.h>
+
+uintptr_t expected_read_pc;
+uintptr_t expected_write_pc;
+
+void precise_fault_read(void);
+void precise_fault_write(void);
+
+__asm__(
+".text\n"
+".align 2\n"
+".global precise_fault_read\n"
+"precise_fault_read:\n"
+"    adrp x10, expected_read_pc\n"
+"    add x10, x10, :lo12:expected_read_pc\n"
+"    adr x9, 1f\n"
+"    str x9, [x10]\n"
+"    mov x11, xzr\n"
+"1:  ldr x12, [x11]\n"
+"    ret\n"
+".global precise_fault_write\n"
+"precise_fault_write:\n"
+"    adrp x10, expected_write_pc\n"
+"    add x10, x10, :lo12:expected_write_pc\n"
+"    adr x9, 1f\n"
+"    str x9, [x10]\n"
+"    mov x11, xzr\n"
+"1:  str xzr, [x11]\n"
+"    ret\n"
+);
+
+static sigjmp_buf jb;
+static volatile int stage;
+static volatile uintptr_t observed_pc[2];
+static volatile uintptr_t observed_fault[2];
+
+static void handler(int sig, siginfo_t *si, void *uctx) {
+    (void)sig;
+    ucontext_t *uc = (ucontext_t *)uctx;
+    int idx = stage - 1;
+    if (idx >= 0 && idx < 2) {
+        observed_pc[idx] = (uintptr_t)uc->uc_mcontext.pc;
+        observed_fault[idx] = (uintptr_t)si->si_addr;
+    }
+    siglongjmp(jb, 1);
+}
+
+static int run_fault(void (*fn)(void), int new_stage) {
+    stage = new_stage;
+    if (sigsetjmp(jb, 1) == 0) {
+        fn();
+        return 1;
+    }
+    return 0;
+}
+
+int main(void) {
+    struct sigaction sa = {0};
+    sa.sa_sigaction = handler;
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGSEGV, &sa, NULL) != 0)
+        return 1;
+
+    int fail = 0;
+    fail += run_fault(precise_fault_read, 1);
+    fail += run_fault(precise_fault_write, 2);
+
+    if (observed_fault[0] != 0 || observed_pc[0] != expected_read_pc) {
+        fprintf(stderr, "read pc mismatch expected=%#lx observed=%#lx fault=%#lx\n",
+                (unsigned long)expected_read_pc, (unsigned long)observed_pc[0],
+                (unsigned long)observed_fault[0]);
+        fail++;
+    }
+    if (observed_fault[1] != 0 || observed_pc[1] != expected_write_pc) {
+        fprintf(stderr, "write pc mismatch expected=%#lx observed=%#lx fault=%#lx\n",
+                (unsigned long)expected_write_pc, (unsigned long)observed_pc[1],
+                (unsigned long)observed_fault[1]);
+        fail++;
+    }
+
+    if (fail)
+        return 1;
+    puts("precise-fault-pc-ok");
+    return 0;
+}
+EOF
+
 
     cp "$PROJECT_DIR/tests/arm64/signals/sigaltstack-thread.c" "$dir/sigaltstack_thread.c"
     push_tree "$dir" "$GUEST_WORK/c"
@@ -945,6 +1039,7 @@ run_lane() {
     run_test c "high-value syscall gaps" "cd '$GUEST_WORK/c' && gcc -O0 syscall_gaps.c -o syscall_gaps -lrt && ./syscall_gaps | grep -qx syscall-gaps-ok"
     run_test c "arm64 DC ZVA sysreg/instruction" "cd '$GUEST_WORK/c' && gcc -O0 dczva.c -o dczva && ./dczva | grep -qx dczva-ok"
     run_test c "arm64 signal ucontext layout" "cd '$GUEST_WORK/c' && gcc -O0 signal_ucontext.c -o signal_ucontext && ./signal_ucontext | grep -qx signal-ucontext-ok"
+    run_test c "arm64 precise fault pc" "cd '$GUEST_WORK/c' && gcc -O0 -fno-pie -no-pie precise_fault_pc.c -o precise_fault_pc && ./precise_fault_pc | grep -qx precise-fault-pc-ok"
     run_test c "per-thread sigaltstack" "cd '$GUEST_WORK/c' && gcc -O0 sigaltstack_thread.c -o sigaltstack_thread -pthread && ./sigaltstack_thread | grep -qx sigaltstack-thread-ok"
     run_test c "arm64 CCMP/CCMN NV condition" "cd '$GUEST_WORK/c' && gcc -O0 ccmp_nv.c -o ccmp_nv && ./ccmp_nv | grep -qx ccmp-nv-ok"
     run_test c "arm64 barriers DMB/DSB/ISB" "cd '$GUEST_WORK/c' && gcc -O0 barriers.c -o barriers && ./barriers | grep -qx barriers-ok"
