@@ -70,7 +70,7 @@ Important findings:
 - OpenCode's `--help` path can hang under iSH/Alpine, but the equivalent `opencode help` command prints usage and exits; the harness probes that subcommand first.
 - Pi's optional `koffi` dependency probes a prebuilt native module during install and can emit an illegal-instruction diagnostic even though npm treats the optional dependency as skippable. The harness now installs Pi with `--omit=optional` for this unauthenticated startup smoke while still running `pi --help`.
 - Claude Code's standalone Bun binary now passes the unauthenticated version smoke. The crash was caused by high-address `MAP_NORESERVE` reservations being invisible to high-hole allocation and later alignment checks, allowing medium JSC/Bun mappings to overlap an existing lazy reservation.
-- Community `grok-cli` is not an official xAI package. It depends on `keytar`, so the Alpine harness installs `libsecret-dev`/build tooling and source-builds the native module to avoid glibc prebuilt relocation failures.
+- Community `grok-cli` is not an official xAI package. It depends on `keytar`, so the Alpine harness disables install scripts and stubs async keychain methods for the unauthenticated help smoke, avoiding native keychain access and glibc prebuilt relocation failures.
 - Debian AI CLI is tracked as a separate lane but remains blocked by glibc/threading failures (`pthread_create()`/libuv assertions), not by package-manager harness logic.
 
 ## Bun + PiClaw workload

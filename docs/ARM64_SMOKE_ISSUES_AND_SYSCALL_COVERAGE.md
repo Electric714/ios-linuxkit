@@ -185,4 +185,4 @@ This audit closed two runtime correctness issues found while isolating Claude/Bu
 
 The helper cleanup also keeps ARM64-only reservation handling behind `GUEST_ARM64` in common memory paths; an x86 audit object build confirmed `kernel_memory.c.o` compiles without leaking ARM64 reservation fields into the x86 `struct mem` layout.
 
-The `grok-cli` row is deliberately documented as a community wrapper rather than an official xAI CLI. Its `keytar` dependency needs a source build on Alpine/musl, so the harness installs `libsecret-dev` and native build tooling before npm install; the unauthenticated `grok --help` path then exits cleanly.
+The `grok-cli` row is deliberately documented as a community wrapper rather than an official xAI CLI. Its `keytar` dependency normally loads a native keychain addon; the unauthenticated help smoke installs package files with npm scripts disabled and stubs the async keychain methods so `grok --help` can validate CLI startup without native keychain access or glibc prebuilt relocation noise.
