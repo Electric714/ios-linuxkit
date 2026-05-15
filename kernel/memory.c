@@ -53,20 +53,20 @@ void mem_init(struct mem *mem) {
     lock_init(&mem->cow_lock);
 }
 
+static page_t page_range_end(page_t start, pages_t pages) {
+    if (pages == 0)
+        return start;
+    if (start >= MEM_PAGES || pages > MEM_PAGES - start)
+        return MEM_PAGES;
+    return start + pages;
+}
+
 struct mem_reservation *mem_find_reservation(struct mem *mem, page_t page) {
     for (struct mem_reservation *r = mem->reservations; r; r = r->next) {
-        if (page >= r->start && page < r->start + r->pages)
+        if (r->pages != 0 && page >= r->start && page < page_range_end(r->start, r->pages))
             return r;
     }
     return NULL;
-}
-
-static bool reservations_overlap(struct mem *mem, page_t start, pages_t pages) {
-    for (struct mem_reservation *r = mem->reservations; r; r = r->next) {
-        if (r->start < start + pages && r->start + r->pages > start)
-            return true;
-    }
-    return false;
 }
 
 int pt_map_lazy(struct mem *mem, page_t start, pages_t pages, unsigned flags) {
@@ -83,11 +83,13 @@ int pt_map_lazy(struct mem *mem, page_t start, pages_t pages, unsigned flags) {
 }
 
 void mem_remove_reservations(struct mem *mem, page_t start, pages_t pages) {
+    if (pages == 0)
+        return;
     struct mem_reservation **pp = &mem->reservations;
+    page_t u_end = page_range_end(start, pages);
     while (*pp) {
         struct mem_reservation *r = *pp;
-        page_t r_end = r->start + r->pages;
-        page_t u_end = start + pages;
+        page_t r_end = page_range_end(r->start, r->pages);
         if (r->start >= u_end || r_end <= start) {
             pp = &r->next;
             continue;
@@ -124,9 +126,9 @@ int mem_set_reservation_flags(struct mem *mem, page_t start, pages_t pages, unsi
     if (pages == 0)
         return 0;
 
-    page_t end = start + pages;
+    page_t end = page_range_end(start, pages);
     for (struct mem_reservation *r = mem->reservations; r; r = r->next) {
-        page_t r_end = r->start + r->pages;
+        page_t r_end = page_range_end(r->start, r->pages);
         if (r->start >= end || r_end <= start)
             continue;
 
@@ -311,13 +313,13 @@ void mem_next_page(struct mem *mem, page_t *page) {
 bool mem_range_has_reservation(struct mem *mem, page_t start, pages_t size) {
     if (size == 0)
         return false;
-    page_t end = start + size;
+    page_t end = page_range_end(start, size);
     if (end <= start)
         return true;
     for (struct mem_reservation *r = mem->reservations; r; r = r->next) {
         if (r->pages == 0)
             continue;
-        page_t r_end = r->start + r->pages;
+        page_t r_end = page_range_end(r->start, r->pages);
         if (r_end <= r->start || (r->start < end && r_end > start))
             return true;
     }
@@ -607,8 +609,10 @@ bool pt_is_hole(struct mem *mem, page_t start, pages_t pages) {
         if (mem_pt(mem, page) != NULL)
             return false;
     }
-    if (reservations_overlap(mem, start, pages))
+#ifdef GUEST_ARM64
+    if (mem_range_has_reservation(mem, start, pages))
         return false;
+#endif
     return true;
 }
 
@@ -659,7 +663,9 @@ int pt_unmap_always(struct mem *mem, page_t start, pages_t pages) {
     if (start + pages - 1 > mem->mmap_hint)
         mem->mmap_hint = start + pages - 1;
 
+#ifdef GUEST_ARM64
     mem_remove_reservations(mem, start, pages);
+#endif
 
     for (page_t page = start; page < start + pages; mem_next_page(mem, &page)) {
         struct pt_entry *pt = mem_pt(mem, page);
@@ -713,8 +719,10 @@ int pt_map_nothing(struct mem *mem, page_t start, pages_t pages, unsigned flags)
 int pt_set_flags(struct mem *mem, page_t start, pages_t pages, int flags) {
     for (page_t page = start; page < start + pages; page++) {
         if (mem_pt(mem, page) == NULL) {
+#ifdef GUEST_ARM64
             if (mem_find_reservation(mem, page) != NULL)
                 continue;
+#endif
             return _ENOMEM;
         }
     }
@@ -772,6 +780,7 @@ int pt_copy_on_write(struct mem *src, struct mem *dst, page_t start, page_t page
     // These will be decremented per-page when the child's mm is freed.
     atomic_fetch_add(&anon_page_count, anon_copied);
 #endif
+#ifdef GUEST_ARM64
     for (struct mem_reservation *r = src->reservations; r; r = r->next) {
         struct mem_reservation *copy = malloc(sizeof(struct mem_reservation));
         if (copy) {
@@ -780,6 +789,7 @@ int pt_copy_on_write(struct mem *src, struct mem *dst, page_t start, page_t page
             dst->reservations = copy;
         }
     }
+#endif
     mem_changed(src);
     mem_changed(dst);
     return 0;
@@ -816,10 +826,20 @@ void *mem_ptr(struct mem *mem, addr_t addr, int type) {
         mem_next_page(mem, &p);
         while (p < MEM_PAGES && mem_pt(mem, p) == NULL)
             mem_next_page(mem, &p);
-        if (p >= MEM_PAGES)
+        if (p >= MEM_PAGES) {
+#ifdef GUEST_ARM64
             goto check_reservation;
-        if (!(mem_pt(mem, p)->flags & P_GROWSDOWN))
+#else
+            return NULL;
+#endif
+        }
+        if (!(mem_pt(mem, p)->flags & P_GROWSDOWN)) {
+#ifdef GUEST_ARM64
             goto check_reservation;
+#else
+            return NULL;
+#endif
+        }
 
         // Enforce RLIMIT_STACK: don't grow stack beyond the limit.
 #ifdef GUEST_ARM64
@@ -872,6 +892,7 @@ void *mem_ptr(struct mem *mem, addr_t addr, int type) {
         entry = mem_pt(mem, page);
         goto have_entry;
 
+#ifdef GUEST_ARM64
 check_reservation: ;
         struct mem_reservation *res = mem_find_reservation(mem, page);
         if (res == NULL)
@@ -896,6 +917,7 @@ check_reservation: ;
         write_wrunlock(&mem->lock);
         read_wrlock(&mem->lock);
         entry = mem_pt(mem, page);
+#endif
     }
 
 have_entry:
