@@ -173,6 +173,7 @@ static NSString *const HANDLERS[] = {@"syncFocus", @"focus", @"newScrollHeight",
         @"fontSize": @(self.effectiveFontSize),
         @"foregroundColor": palette.foregroundColor,
         @"backgroundColor": palette.backgroundColor,
+        @"cursorColor": palette.cursorColor ?: palette.foregroundColor,
         @"blinkCursor": @(prefs.blinkCursor),
         @"cursorShape": prefs.htermCursorShape,
     } mutableCopy];

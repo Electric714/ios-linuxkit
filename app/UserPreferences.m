@@ -36,6 +36,7 @@ NSDictionary<NSString *, NSString *> *kvoProperties;
 
 static NSString *const kSystemMonospacedFontName = @"ui-monospace";
 static NSString *const kBundledTerminalFontFamilyName = @"FiraCode Nerd Font Mono";
+static NSString *const kGhosttyWebTerminalFontFamilyName = @"\"FiraCode Nerd Font Mono\", Menlo, Monaco, \"Courier New\", monospace";
 
 @interface UserPreferences () {
     BOOL _hostnameIsOverridden;
@@ -167,11 +168,11 @@ bool (*remove_user_default)(const char *name);
             kPreferenceCursorStyleKey: @(CursorStyleBlock),
             kPreferenceHideStatusBarKey: @(NO),
             kPreferenceColorSchemeKey: @(ColorSchemeMatchSystem),
-            kPreferenceThemeKey: @"Default",
+            kPreferenceThemeKey: @"Ghostty Default",
             kHostnameOverrideKey: UIDevice.currentDevice.name,
         }];
         [_defaults registerDefaults:@{
-            kPreferenceFontFamilyKey: kBundledTerminalFontFamilyName,
+            kPreferenceFontFamilyKey: kGhosttyWebTerminalFontFamilyName,
         }];
         get_all_defaults_keys = get_all_defaults_keys_impl;
         get_friendly_name = get_friendly_name_impl;
@@ -339,6 +340,9 @@ bool (*remove_user_default)(const char *name);
 }
 
 - (NSString *)fontFamilyUserFacingName {
+    if ([self.fontFamily isEqualToString:kGhosttyWebTerminalFontFamilyName]) {
+        return @"Ghostty Web Default";
+    }
     if ([self.fontFamily isEqualToString:kSystemMonospacedFontName]) {
         return @"System";
     }
@@ -349,6 +353,12 @@ bool (*remove_user_default)(const char *name);
 }
 
 - (UIFont *)approximateFont {
+    if ([self.fontFamily isEqualToString:kGhosttyWebTerminalFontFamilyName]) {
+        UIFont *font = [UIFont fontWithName:kBundledTerminalFontFamilyName size:self.fontSize.doubleValue];
+        if (font) {
+            return font;
+        }
+    }
     if (@available(iOS 13.4, *)) {
         if ([self.fontFamily isEqualToString:kSystemMonospacedFontName]) {
             return [UIFont monospacedSystemFontOfSize:self.fontSize.doubleValue weight:UIFontWeightRegular];

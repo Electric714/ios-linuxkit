@@ -254,76 +254,29 @@ char *(*get_documents_directory)(void);
     static NSArray<Theme *> *defaultThemes;
     if (!defaultThemes) {
         defaultThemes = @[
-            [[self alloc] initWithName:@"Default"
-                          lightPalette:[[Palette alloc] initWithForegroundColor:@"#000"
-                                                                backgroundColor:@"#fff"
-                                                                    cursorColor:nil
-                                                          colorPaletteOverrides:nil]
-                           darkPalette:[[Palette alloc] initWithForegroundColor:@"#fff"
-                                                                backgroundColor:@"#000"
-                                                                    cursorColor:nil
-                                                          colorPaletteOverrides:nil]
-                            appearance:nil],
-            [[self alloc] initWithName:@"1337"
-                               palette:[[Palette alloc] initWithForegroundColor:@"#0f0"
-                                                                backgroundColor:@"#000"
-                                                                    cursorColor:nil
-                                                          colorPaletteOverrides:nil]
-                            appearance:ThemeAppearance.alwaysDark],
-            [[self alloc] initWithName:@"Solarized"
-                          lightPalette:[[Palette alloc] initWithForegroundColor:@"#657b83"
-                                                                backgroundColor:@"#fdf6e3"
-                                                                    cursorColor:nil
+            [[self alloc] initWithName:@"Ghostty Default"
+                               palette:[[Palette alloc] initWithForegroundColor:@"#d4d4d4"
+                                                                backgroundColor:@"#1e1e1e"
+                                                                    cursorColor:@"#ffffff"
                                                           colorPaletteOverrides:@[
-                            @"#073642",
-                            @"#dc322f",
-                            @"#859900",
-                            @"#b58900",
-                            @"#268bd2",
-                            @"#d33682",
-                            @"#2aa198",
-                            @"#eee8d5",
-                            @"#002b36",
-                            @"#cb4b16",
-                            @"#586e75",
-                            @"#657b83",
-                            @"#839496",
-                            @"#6c71c4",
-                            @"#93a1a1",
-                            @"#fdf6e3",
+                            @"#000000",
+                            @"#cd3131",
+                            @"#0dbc79",
+                            @"#e5e510",
+                            @"#2472c8",
+                            @"#bc3fbc",
+                            @"#11a8cd",
+                            @"#e5e5e5",
+                            @"#666666",
+                            @"#f14c4c",
+                            @"#23d18b",
+                            @"#f5f543",
+                            @"#3b8eea",
+                            @"#d670d6",
+                            @"#29b8db",
+                            @"#ffffff",
                           ]]
-                           darkPalette:[[Palette alloc] initWithForegroundColor:@"#839496"
-                                                                backgroundColor:@"#002b36"
-                                                                    cursorColor:nil
-                                                          colorPaletteOverrides:@[
-                            @"#073642",
-                            @"#dc322f",
-                            @"#859900",
-                            @"#b58900",
-                            @"#268bd2",
-                            @"#d33682",
-                            @"#2aa198",
-                            @"#eee8d5",
-                            @"#002b36",
-                            @"#cb4b16",
-                            @"#586e75",
-                            @"#657b83",
-                            @"#839496",
-                            @"#6c71c4",
-                            @"#93a1a1",
-                            @"#fdf6e3",
-                           ]]
-                            appearance:nil
-            ],
-            // Because this is a hidden theme, it needs to be last. There's
-            // logic in UserPreferences and ThemesViewController which will not
-            // work correctly otherwise.
-            [[self alloc] initWithName:@"Hot Dog Stand"
-                               palette:[[Palette alloc] initWithForegroundColor:@"#ff0"
-                                                                backgroundColor:@"#f00"
-                                                                    cursorColor:nil
-                                                          colorPaletteOverrides:nil]
-                            appearance:nil],
+                            appearance:ThemeAppearance.alwaysDark],
         ];
     }
     return defaultThemes;

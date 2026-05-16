@@ -16,42 +16,41 @@
 @property (strong, nonatomic) IBOutlet UISwitch *blinkCursor;
 @property (strong, nonatomic) IBOutlet UISegmentedControl *cursorStyle;
 @property (strong, nonatomic) IBOutlet UISwitch *hideStatusBar;
-@property UIFontPickerViewController *fontPicker API_AVAILABLE(ios(13));
 @end
 
 char *previewString = "# cat /proc/ish/colors\r\n"
-"\x1B[30m" "iSH" "\x1B[39m "
-"\x1B[31m" "iSH" "\x1B[39m "
-"\x1B[32m" "iSH" "\x1B[39m "
-"\x1B[33m" "iSH" "\x1B[39m "
-"\x1B[34m" "iSH" "\x1B[39m "
-"\x1B[35m" "iSH" "\x1B[39m "
-"\x1B[36m" "iSH" "\x1B[39m "
-"\x1B[37m" "iSH" "\x1B[39m" "\r\n\x1B[7m"
-"\x1B[40m" "iSH" "\x1B[39m "
-"\x1B[41m" "iSH" "\x1B[39m "
-"\x1B[42m" "iSH" "\x1B[39m "
-"\x1B[43m" "iSH" "\x1B[39m "
-"\x1B[44m" "iSH" "\x1B[39m "
-"\x1B[45m" "iSH" "\x1B[39m "
-"\x1B[46m" "iSH" "\x1B[39m "
-"\x1B[47m" "iSH" "\x1B[39m" "\x1B[0m\x1B[1m\r\n"
-"\x1B[90m" "iSH" "\x1B[39m "
-"\x1B[91m" "iSH" "\x1B[39m "
-"\x1B[92m" "iSH" "\x1B[39m "
-"\x1B[93m" "iSH" "\x1B[39m "
-"\x1B[94m" "iSH" "\x1B[39m "
-"\x1B[95m" "iSH" "\x1B[39m "
-"\x1B[96m" "iSH" "\x1B[39m "
-"\x1B[97m" "iSH" "\x1B[39m" "\r\n\x1B[7m"
-"\x1B[100m" "iSH" "\x1B[39m "
-"\x1B[101m" "iSH" "\x1B[39m "
-"\x1B[102m" "iSH" "\x1B[39m "
-"\x1B[103m" "iSH" "\x1B[39m "
-"\x1B[104m" "iSH" "\x1B[39m "
-"\x1B[105m" "iSH" "\x1B[39m "
-"\x1B[106m" "iSH" "\x1B[39m "
-"\x1B[107m" "iSH" "\x1B[39m" "\x1B[0m\r\n"
+"\x1B[30m" "ios-linuxkit" "\x1B[39m "
+"\x1B[31m" "ios-linuxkit" "\x1B[39m "
+"\x1B[32m" "ios-linuxkit" "\x1B[39m "
+"\x1B[33m" "ios-linuxkit" "\x1B[39m "
+"\x1B[34m" "ios-linuxkit" "\x1B[39m "
+"\x1B[35m" "ios-linuxkit" "\x1B[39m "
+"\x1B[36m" "ios-linuxkit" "\x1B[39m "
+"\x1B[37m" "ios-linuxkit" "\x1B[39m" "\r\n\x1B[7m"
+"\x1B[40m" "ios-linuxkit" "\x1B[39m "
+"\x1B[41m" "ios-linuxkit" "\x1B[39m "
+"\x1B[42m" "ios-linuxkit" "\x1B[39m "
+"\x1B[43m" "ios-linuxkit" "\x1B[39m "
+"\x1B[44m" "ios-linuxkit" "\x1B[39m "
+"\x1B[45m" "ios-linuxkit" "\x1B[39m "
+"\x1B[46m" "ios-linuxkit" "\x1B[39m "
+"\x1B[47m" "ios-linuxkit" "\x1B[39m" "\x1B[0m\x1B[1m\r\n"
+"\x1B[90m" "ios-linuxkit" "\x1B[39m "
+"\x1B[91m" "ios-linuxkit" "\x1B[39m "
+"\x1B[92m" "ios-linuxkit" "\x1B[39m "
+"\x1B[93m" "ios-linuxkit" "\x1B[39m "
+"\x1B[94m" "ios-linuxkit" "\x1B[39m "
+"\x1B[95m" "ios-linuxkit" "\x1B[39m "
+"\x1B[96m" "ios-linuxkit" "\x1B[39m "
+"\x1B[97m" "ios-linuxkit" "\x1B[39m" "\r\n\x1B[7m"
+"\x1B[100m" "ios-linuxkit" "\x1B[39m "
+"\x1B[101m" "ios-linuxkit" "\x1B[39m "
+"\x1B[102m" "ios-linuxkit" "\x1B[39m "
+"\x1B[103m" "ios-linuxkit" "\x1B[39m "
+"\x1B[104m" "ios-linuxkit" "\x1B[39m "
+"\x1B[105m" "ios-linuxkit" "\x1B[39m "
+"\x1B[106m" "ios-linuxkit" "\x1B[39m "
+"\x1B[107m" "ios-linuxkit" "\x1B[39m" "\x1B[0m\r\n"
 "# ";
 
 @implementation AboutAppearanceViewController {
@@ -83,21 +82,6 @@ char *previewString = "# cat /proc/ish/colors\r\n"
         [_terminal sendOutput:previewString length:(int)strlen(previewString)];
     }
 #endif
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    if (@available(iOS 13, *)) {
-        // Initialize the font picker ASAP, as it takes about a quarter second to initialize (XPC crap) and appears invisible until then.
-        // Re-initialize it after navigating away from it, to reset the table view highlight.
-        UIFontPickerViewControllerConfiguration *config = [UIFontPickerViewControllerConfiguration new];
-        config.filteredTraits = UIFontDescriptorTraitMonoSpace;
-        self.fontPicker = [[UIFontPickerViewController alloc] initWithConfiguration:config];
-        // Prevent the font picker from resizing the popup when it appears
-        self.fontPicker.preferredContentSize = CGSizeZero;
-        self.fontPicker.navigationItem.title = @"Font";
-        self.fontPicker.delegate = self;
-        self.fontPicker.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Reset" style:UIBarButtonItemStylePlain target:self action:@selector(resetFont:)];
-    }
 }
 
 #pragma mark - Table view data source
@@ -264,23 +248,8 @@ enum {
 }
 
 - (void)selectFont:(id)sender {
-    if (@available(iOS 13, *)) {
-        [self.navigationController pushViewController:self.fontPicker animated:YES];
-        return;
-    }
-    
     FontPickerViewController *fontPicker = [self.storyboard instantiateViewControllerWithIdentifier:@"FontPicker"];
     [self.navigationController pushViewController:fontPicker animated:YES];
-}
-
-- (void)fontPickerViewControllerDidPickFont:(UIFontPickerViewController *)viewController API_AVAILABLE(ios(13.0)) {
-    UserPreferences.shared.fontFamily = viewController.selectedFontDescriptor.fontAttributes[UIFontDescriptorFamilyAttribute];
-    [self.navigationController popToViewController:self animated:YES];
-}
-
-- (IBAction)resetFont:(UIBarButtonItem *)sender API_AVAILABLE(ios(13)) {
-    UserPreferences.shared.fontFamily = nil;
-    [self.navigationController popToViewController:self animated:YES];
 }
 
 - (IBAction)fontSizeChanged:(UIStepper *)sender {
