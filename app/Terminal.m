@@ -287,12 +287,9 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
 #endif
 
     NSString *dataString = [[NSString alloc] initWithBytes:data.bytes length:data.length encoding:NSISOLatin1StringEncoding];
-    // escape for javascript. only have to worry about the first 256 codepoints, because of the latin-1 encoding.
-    dataString = [dataString stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
-    dataString = [dataString stringByReplacingOccurrencesOfString:@"\r" withString:@"\\r"];
-    dataString = [dataString stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-    dataString = [dataString stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-    NSString *jsToEvaluate = [NSString stringWithFormat:@"exports.write(\"%@\")", dataString];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@[dataString ?: @""] options:0 error:nil];
+    NSString *jsonArgs = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSString *jsToEvaluate = [NSString stringWithFormat:@"exports.write.apply(null, %@)", jsonArgs ?: @"[\"\"]"];
     [self.webView evaluateJavaScript:jsToEvaluate completionHandler:^(id result, NSError *error) {
 #if !ISH_LINUX
         lock(&self->_dataLock);
