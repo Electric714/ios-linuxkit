@@ -6,7 +6,12 @@
 # compatible toolchain you can edit this file to point to it instead.)
 
 # Default install paths for Homebrew on Intel, Homebrew on Apple silicon, and MacPorts, respectively.
-clang = find_program('/usr/local/opt/llvm/bin/clang', '/opt/homebrew/opt/llvm/bin/clang', '/opt/local/bin/clang', 'clang')
+vdso_clang_path = run_command('sh', '-c', 'printf %s "$ISH_VDSO_CLANG"', check: false).stdout()
+if vdso_clang_path != ''
+    clang = find_program(vdso_clang_path)
+else
+    clang = find_program('/usr/local/opt/llvm/bin/clang', '/opt/homebrew/opt/llvm/bin/clang', '/opt/local/bin/clang', 'clang')
+endif
 check_cc = find_program('./check-cc.sh')
 result = run_command(check_cc, clang, check: false)
 if result.returncode() != 0
