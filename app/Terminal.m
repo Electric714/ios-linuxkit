@@ -11,7 +11,6 @@
 #include "LinuxInterop.h"
 #include "fs/devices.h"
 #include "fs/tty.h"
-#include "fs/devices.h"
 
 extern struct tty_driver ios_pty_driver;
 
@@ -173,15 +172,23 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
             return;
         int cols = dimensions[0].intValue;
         int rows = dimensions[1].intValue;
-        if (cols <= 0 || rows <= 0 || self.tty == NULL)
+        tty_t tty;
+        @synchronized (self) {
+            tty = self->_tty;
+        }
+        if (cols <= 0 || rows <= 0 || tty == NULL)
             return;
 #if !ISH_LINUX
-        lock(&self.tty->lock);
-        tty_set_winsize(self.tty, (struct winsize_) {.col = cols, .row = rows});
-        unlock(&self.tty->lock);
+        lock(&tty->lock);
+        tty_set_winsize(tty, (struct winsize_) {.col = cols, .row = rows});
+        unlock(&tty->lock);
 #else
         async_do_in_workqueue(^{
-            self->_tty->ops->resize(self->_tty, cols, rows);
+            @synchronized (self) {
+                if (self->_tty != tty)
+                    return;
+            }
+            tty->ops->resize(tty, cols, rows);
         });
 #endif
     }];
@@ -231,14 +238,22 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
 #endif
 
 - (void)sendInput:(NSData *)input {
-    if (self.tty == NULL)
+    tty_t tty;
+    @synchronized (self) {
+        tty = self->_tty;
+    }
+    if (tty == NULL || input == nil)
         return;
 #if !ISH_LINUX
-    tty_input(self.tty, input.bytes, input.length, 0);
+    tty_input(tty, input.bytes, input.length, 0);
 #else
     async_do_in_workqueue(^{
         NSData *inputRef = input;
-        self.tty->ops->send_input(self.tty, inputRef.bytes, inputRef.length);
+        @synchronized (self) {
+            if (self->_tty != tty)
+                return;
+        }
+        tty->ops->send_input(tty, inputRef.bytes, inputRef.length);
     });
 #endif
     [self.webView evaluateJavaScript:@"exports.setUserGesture()" completionHandler:nil];
@@ -279,9 +294,14 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
         data = _pendingData;
         _pendingData = [[NSMutableData alloc] initWithCapacity:BUF_SIZE];
         _outputInProgress = YES;
-        if (self->_tty)
+        tty_t tty = self->_tty;
+        if (tty != NULL)
             async_do_in_irq(^{
-                self->_tty->ops->can_output(self->_tty);
+                @synchronized (self) {
+                    if (self->_tty != tty)
+                        return;
+                }
+                tty->ops->can_output(tty);
             });
     }
 #endif
