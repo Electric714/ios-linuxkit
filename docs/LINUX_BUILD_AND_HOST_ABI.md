@@ -277,7 +277,9 @@ backing paths, remove guest-sized socket-option VLAs, validate returned address
 lengths, harden accept/name buffers, bound `sendmsg`/`recvmsg` iov/control-
 message allocation and cleanup, translate and validate ARM64 `cmsghdr` layout
 for `SCM_RIGHTS`, avoid SCM queue asserts on malformed/native ancillary data,
-copy only actual `recvfrom` byte counts back to the guest, and clear released
+copy only actual `recvfrom` byte counts back to the guest, accept oversized
+`recvfrom` source-address buffers by clamping to the internal sockaddr buffer
+(Linux compatibility required by c-ares/libcurl DNS), and clear released
 Unix-socket name references after failed `bind()` calls.
 
 `exit_group` now gives helper-heavy runtimes a longer bounded drain window before

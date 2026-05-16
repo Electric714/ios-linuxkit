@@ -8,7 +8,7 @@ Supporting documentation: [ARM64 backend](ARM64_BACKEND.md), [workload smoke tes
 
 Latest staged runtime report: **83 / 83 passing**
 
-- Report: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-100813.md`
+- Report: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-171357.md`
 - Binary: `build-arm64-linux/ish`
 - Rootfs: `alpine-arm64-fakefs`
 - Timeout: `TIMEOUT_S=180`
@@ -46,7 +46,7 @@ Run the CLI corner-case smoke suite for optional shells, TUI tools, network diag
 make test-arm64-cli-corner-smoke ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=240 INSTALL_TIMEOUT_S=1200
 ```
 
-Latest CLI corner result: **26 / 26 passing** at `/workspace/tmp/ish-arm64-cli-corner-smoke-20260516-153555.md`. This includes `htop` and `btop` launched inside `tmux`, Docker `hello-world` as an explicit daemon-unavailable diagnostic, and a real `rcarmo/go-gte` HTTPS clone through the current `/etc/hosts` workaround while the libcurl/c-ares DNS path is being fixed.
+Latest CLI corner result: **27 / 27 passing** at `/workspace/tmp/ish-arm64-cli-corner-smoke-20260516-171044.md`. This includes `htop` and `btop` launched inside `tmux`, Docker `hello-world` as an explicit daemon-unavailable diagnostic, direct `curl https://github.com`, direct HTTPS `git ls-remote`, and a real `rcarmo/go-gte` HTTPS clone without an `/etc/hosts` workaround after the UDP `recvfrom()` sockaddr-length compatibility fix.
 
 Run the separate AI CLI coverage suite:
 
@@ -94,7 +94,7 @@ The C stage is the broadest low-level coverage lane:
 
 - **SysV IPC:** `shmget`/`shmat`/`shmdt`/`shmctl`, `msgget`/`msgsnd`/`msgrcv`/`msgctl` across `fork()`.
 - **High-value syscall gaps:** `signalfd4`, SysV semaphores, POSIX message queues, `memfd_create`, `openat2`, `faccessat2`, `fchmodat2(AT_EMPTY_PATH)`, `preadv2`, `pwritev2`, `process_vm_readv`, and `process_vm_writev`.
-- **Socket ABI:** UDP `sendto`/`recvfrom`, TCP `listen`/`accept`, `getsockname`, `setsockopt`, `getsockopt`, socketpair `sendmsg`/`recvmsg`, and ARM64 `SCM_RIGHTS` fd passing with guest `cmsghdr` layout validation.
+- **Socket ABI:** UDP `sendto`/`recvfrom`, TCP `listen`/`accept`, `getsockname`, `setsockopt`, `getsockopt`, socketpair `sendmsg`/`recvmsg`, and ARM64 `SCM_RIGHTS` fd passing with guest `cmsghdr` layout validation. UDP `recvfrom()` now accepts oversized source-address buffers, matching Linux behavior required by c-ares/libcurl DNS.
 - **ARM64 sysreg/instruction fixtures:** `DCZID_EL0`/`dc zva`, signal `ucontext_t`, per-thread `sigaltstack`, CCMP/CCMN condition-code-15 (`NV`), DMB/DSB/ISB barriers, and self-modifying-code invalidation.
 
 ### Rust fixture details

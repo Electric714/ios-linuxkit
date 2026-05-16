@@ -770,9 +770,9 @@ int_t sys_recvfrom(fd_t sock_fd, addr_t buffer_addr, dword_t len, dword_t flags,
     if (sockaddr_len_addr != 0) {
         if (user_get(sockaddr_len_addr, sockaddr_len))
             return _EFAULT;
-        if (sockaddr_len > sizeof(struct sockaddr_max_))
-            return _EINVAL;
         sockaddr_buffer_len = sockaddr_len;
+        if (sockaddr_len > sizeof(struct sockaddr_max_))
+            sockaddr_len = sizeof(struct sockaddr_max_);
     }
 
     char *buffer = malloc(len);
