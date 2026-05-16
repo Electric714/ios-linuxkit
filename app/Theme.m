@@ -109,12 +109,11 @@ char *get_documents_directory_impl(void) {
     id colorPaletteOverrides = serializedRepresentation[@"colorPaletteOverrides"];
     BOOL validColorPalette = YES;
     if (colorPaletteOverrides) {
-        if ([colorPaletteOverrides isKindOfClass:NSArray.class]) {
+        validColorPalette = [colorPaletteOverrides isKindOfClass:NSArray.class] && [colorPaletteOverrides count] == 16;
+        if (validColorPalette) {
             for (id color in colorPaletteOverrides) {
-                validColorPalette = validColorPalette || VALID_COLOR(color);
+                validColorPalette = validColorPalette && VALID_COLOR(color);
             }
-        } else {
-            validColorPalette = NO;
         }
     }
     if (VALID_COLOR(foregroundColor) && VALID_COLOR(backgroundColor) && (!cursorColor || VALID_COLOR(cursorColor)) && validColorPalette) {
