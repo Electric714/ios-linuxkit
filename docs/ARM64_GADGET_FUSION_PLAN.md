@@ -170,6 +170,19 @@ Phase 2E implementation tranche:
   - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-002946.md`, **10 / 10 passing**, no stats output.
   - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-003025.md`, **60 / 60 passing**.
 
+Phase 2F implementation tranche:
+
+- Implemented narrow adjacent same-page `ADD/SUB (imm, 64-bit, no flags) + LDRH Wt, [Xd, #imm]` fusion for non-SP address-generation registers and non-XZR load destinations.
+- The fused gadget stores the ADD/SUB result before the LDRH, writes the LDRH guest PC into `LOCAL_jit_saved_pc` before the faultable memory access, and zero-extends the 16-bit load result into the architectural X register. This preserves the pre-fault ADD/SUB side effect and `rt == rd` overwrite ordering.
+- Added runtime fixtures:
+  - `arm64 addsub ldr16 fusion` for successful zero-extending halfword loads, including `rt == rd` ordering.
+  - `arm64 fused addsub ldr16 fault pc` for precise LDRH fault PC, visible pre-fault ADD side effect, and no destination-register write on fault.
+- Validation reports:
+  - Targeted success/fault smokes: `addsub-ldr16-fusion-ok abcd cdef`, `fused-addsub-ldr16-fault-ok`.
+  - Counter-enabled Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-004542.md`, **10 / 10 passing**. Representative fusion hits: Node eval `addsub_ldr16=16766`, Node JSON `41041`, Bun eval `5`, Bun JSON `5`.
+  - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-004617.md`, **10 / 10 passing**, no stats output.
+  - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-004655.md`, **62 / 62 passing**.
+
 ## Phase 3: linear superblocks
 
 Phase 3 should wait until the Phase 1 fusion tranche is stable across repeated Node/Bun and core runtime runs. Initial design remains same-page and conservative:
