@@ -118,6 +118,8 @@ prepare_fixture() {
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <ucontext.h>
 
 uintptr_t expected_internal_fault_pc;
@@ -125,6 +127,8 @@ uintptr_t expected_internal_fault_pc;
 int ic_branch_fixture(int v);
 int ic_call_adjacent_fixture(int v);
 void ic_internal_fault_fixture(int v);
+int ic_invalidation_fixture(int v);
+extern uint32_t ic_invalidation_patch_site;
 
 __asm__(
 ".text\n"
@@ -164,6 +168,16 @@ __asm__(
 "    mov w0, #99\n"
 "    ret\n"
 "4:  ret\n"
+".global ic_invalidation_fixture\n"
+".global ic_invalidation_patch_site\n"
+"ic_invalidation_fixture:\n"
+"    cmp w0, #0\n"
+"    b.eq 5f\n"
+"ic_invalidation_patch_site:\n"
+"    mov w0, #31\n"
+"    ret\n"
+"5:  mov w0, #17\n"
+"    ret\n"
 );
 
 static sigjmp_buf jb;
@@ -210,6 +224,30 @@ static int call_adjacent_fixture(void) {
     return 0;
 }
 
+static int invalidation_fixture(void) {
+    int before = ic_invalidation_fixture(1);
+    int taken = ic_invalidation_fixture(0);
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size <= 0)
+        return 1;
+    uintptr_t site = (uintptr_t)&ic_invalidation_patch_site;
+    uintptr_t page = site & ~((uintptr_t)page_size - 1);
+    if (mprotect((void *)page, (size_t)page_size, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+        perror("mprotect");
+        return 1;
+    }
+    ic_invalidation_patch_site = 0x52800560u; // mov w0, #43
+    __builtin___clear_cache((char *)site, (char *)site + sizeof(ic_invalidation_patch_site));
+    int after = ic_invalidation_fixture(1);
+    int taken_after = ic_invalidation_fixture(0);
+    if (before != 31 || taken != 17 || after != 43 || taken_after != 17) {
+        printf("invalidation-fail %d %d %d %d\n", before, taken, after, taken_after);
+        return 1;
+    }
+    puts("invalidation-ok");
+    return 0;
+}
+
 static int fault_fixture(void) {
     struct sigaction sa = {0};
     sa.sa_sigaction = handler;
@@ -238,7 +276,7 @@ static int fault_fixture(void) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "usage: %s branch|call|fault\n", argv[0]);
+        fprintf(stderr, "usage: %s branch|call|fault|invalidation\n", argv[0]);
         return 2;
     }
     if (strcmp(argv[1], "branch") == 0)
@@ -247,6 +285,8 @@ int main(int argc, char **argv) {
         return call_adjacent_fixture();
     if (strcmp(argv[1], "fault") == 0)
         return fault_fixture();
+    if (strcmp(argv[1], "invalidation") == 0)
+        return invalidation_fixture();
     return 2;
 }
 EOF_C
@@ -263,6 +303,8 @@ main() {
     run_host_test "default branch fixture stays silent" "" "cd '$GUEST_WORK' && ./internal_continue_fixture branch" exact "branch-ok"
     run_host_test "stats-only default-off fixture" "ISH_ARM64_FUSION_STATS=1" "cd '$GUEST_WORK' && ./internal_continue_fixture branch" stats-zero "branch-ok"
     run_host_test "opt-in branch taken/fallthrough fixture" "ISH_ARM64_FUSION_STATS=1 ISH_ARM64_INTERNAL_CONTINUE=1" "cd '$GUEST_WORK' && ./internal_continue_fixture branch" stats-positive "branch-ok"
+    run_host_test "default same-page invalidation fixture" "" "cd '$GUEST_WORK' && ./internal_continue_fixture invalidation" exact "invalidation-ok"
+    run_host_test "opt-in same-page invalidation fixture" "ISH_ARM64_FUSION_STATS=1 ISH_ARM64_INTERNAL_CONTINUE=1" "cd '$GUEST_WORK' && ./internal_continue_fixture invalidation" stats-positive "invalidation-ok"
     run_host_test "opt-in call-adjacent fixture" "ISH_ARM64_FUSION_STATS=1 ISH_ARM64_INTERNAL_CONTINUE=1" "cd '$GUEST_WORK' && ./internal_continue_fixture call" stats-positive "call-adjacent-ok"
     run_host_test "opt-in internal-segment fault PC fixture" "ISH_ARM64_FUSION_STATS=1 ISH_ARM64_INTERNAL_CONTINUE=1" "cd '$GUEST_WORK' && ./internal_continue_fixture fault" stats-positive "internal-fault-pc-ok"
 
