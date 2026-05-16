@@ -274,6 +274,19 @@ Phase 2M implementation tranche:
   - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-025647.md`, **10 / 10 passing**, no stats output.
   - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-025733.md`, **76 / 76 passing**.
 
+Phase 2N implementation tranche:
+
+- Implemented narrow adjacent same-page `LDRSW Xt, [Xn/SP, #imm] + CBZ/CBNZ Xt` fusion for sign-extending 32-bit unsigned-offset loads followed by a 64-bit zero/nonzero branch.
+- The fused gadget supports both general-register and SP bases, writes the LDRSW guest PC into `LOCAL_jit_saved_pc` before the faultable memory access, sign-extends the loaded value to 64 bits, stores the destination register before branching, and preserves the existing target/fallthrough chaining model.
+- Added runtime fixtures:
+  - `arm64 ldrsw cbz fusion` for successful general-register and SP-relative `LDRSW + CBZ/CBNZ` behavior, including negative sign-extension.
+  - `arm64 fused ldrsw cbz fault pc` for precise LDRSW fault PC and no destination-register write on fault while guest SP is zero, delivered on a signal altstack.
+- Validation reports:
+  - Targeted success/fault smokes: `ldrsw-cbz-fusion-ok`, `fused-ldrsw-cbz-fault-ok`; a counter-only fixture run showed `ldr32_sx_cbz64=4`.
+  - Counter-enabled Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-031519.md`, **10 / 10 passing**. This tranche is safe but low-hit in the table: total `ldr32_sx_cbz64=4` and `ldr32_sx_cbz64_cand=4`; remaining `ldr_cbz` candidate gap is about `4912`, likely mostly signed 8/16-bit or other non-allow-listed shapes.
+  - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-031601.md`, **10 / 10 passing**, no stats output.
+  - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-031642.md`, **78 / 78 passing**.
+
 ## Phase 3: linear superblocks
 
 Phase 3 should wait until the Phase 1 fusion tranche is stable across repeated Node/Bun and core runtime runs. Initial design remains same-page and conservative:

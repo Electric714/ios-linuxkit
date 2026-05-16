@@ -53,6 +53,7 @@ static uint64_t arm64_fusion_addsub_str16_count;
 static uint64_t arm64_fusion_addsub_str8_count;
 static uint64_t arm64_fusion_ldr64_cbz64_count;
 static uint64_t arm64_fusion_ldr64_sp_cbz64_count;
+static uint64_t arm64_fusion_ldr32_sx_cbz64_count;
 static uint64_t arm64_fusion_ldr32_cbz32_count;
 static uint64_t arm64_fusion_ldr16_cbz32_count;
 static uint64_t arm64_fusion_ldr8_cbz32_count;
@@ -61,6 +62,7 @@ static uint64_t arm64_fusion_addsub_str_candidate_count;
 static uint64_t arm64_fusion_ldr_cbz_candidate_count;
 static uint64_t arm64_fusion_ldr64_cbz64_candidate_count;
 static uint64_t arm64_fusion_ldr64_sp_cbz64_candidate_count;
+static uint64_t arm64_fusion_ldr32_sx_cbz64_candidate_count;
 static bool arm64_fusion_stats_dumped;
 
 void arm64_fusion_stats_dump_if_enabled(void) {
@@ -68,7 +70,7 @@ void arm64_fusion_stats_dump_if_enabled(void) {
         return;
     arm64_fusion_stats_dumped = true;
     fprintf(stderr,
-            "ARM64_FUSION_STATS cmp_bcond=%llu subs_bcond=%llu adrp_add=%llu adrp_ldr64=%llu addsub_fast=%llu addsub_cbz=%llu addsub_ldr64=%llu addsub_ldr32=%llu addsub_ldr16=%llu addsub_ldr8=%llu addsub_str64=%llu addsub_str32=%llu addsub_str16=%llu addsub_str8=%llu ldr64_cbz64=%llu ldr64_sp_cbz64=%llu ldr32_cbz32=%llu ldr16_cbz32=%llu ldr8_cbz32=%llu addsub_ldr_cand=%llu addsub_str_cand=%llu ldr_cbz_cand=%llu ldr64_cbz64_cand=%llu ldr64_sp_cbz64_cand=%llu\n",
+            "ARM64_FUSION_STATS cmp_bcond=%llu subs_bcond=%llu adrp_add=%llu adrp_ldr64=%llu addsub_fast=%llu addsub_cbz=%llu addsub_ldr64=%llu addsub_ldr32=%llu addsub_ldr16=%llu addsub_ldr8=%llu addsub_str64=%llu addsub_str32=%llu addsub_str16=%llu addsub_str8=%llu ldr64_cbz64=%llu ldr64_sp_cbz64=%llu ldr32_sx_cbz64=%llu ldr32_cbz32=%llu ldr16_cbz32=%llu ldr8_cbz32=%llu addsub_ldr_cand=%llu addsub_str_cand=%llu ldr_cbz_cand=%llu ldr64_cbz64_cand=%llu ldr64_sp_cbz64_cand=%llu ldr32_sx_cbz64_cand=%llu\n",
             (unsigned long long)arm64_fusion_cmp_bcond_count,
             (unsigned long long)arm64_fusion_subs_bcond_count,
             (unsigned long long)arm64_fusion_adrp_add_count,
@@ -85,6 +87,7 @@ void arm64_fusion_stats_dump_if_enabled(void) {
             (unsigned long long)arm64_fusion_addsub_str8_count,
             (unsigned long long)arm64_fusion_ldr64_cbz64_count,
             (unsigned long long)arm64_fusion_ldr64_sp_cbz64_count,
+            (unsigned long long)arm64_fusion_ldr32_sx_cbz64_count,
             (unsigned long long)arm64_fusion_ldr32_cbz32_count,
             (unsigned long long)arm64_fusion_ldr16_cbz32_count,
             (unsigned long long)arm64_fusion_ldr8_cbz32_count,
@@ -92,7 +95,8 @@ void arm64_fusion_stats_dump_if_enabled(void) {
             (unsigned long long)arm64_fusion_addsub_str_candidate_count,
             (unsigned long long)arm64_fusion_ldr_cbz_candidate_count,
             (unsigned long long)arm64_fusion_ldr64_cbz64_candidate_count,
-            (unsigned long long)arm64_fusion_ldr64_sp_cbz64_candidate_count);
+            (unsigned long long)arm64_fusion_ldr64_sp_cbz64_candidate_count,
+            (unsigned long long)arm64_fusion_ldr32_sx_cbz64_candidate_count);
     fflush(stderr);
 }
 
@@ -196,6 +200,8 @@ extern void gadget_fused_ldr64_cbz_imm(void);
 extern void gadget_fused_ldr64_cbnz_imm(void);
 extern void gadget_fused_ldr64_sp_cbz_imm(void);
 extern void gadget_fused_ldr64_sp_cbnz_imm(void);
+extern void gadget_fused_ldr32_sx_cbz_imm(void);
+extern void gadget_fused_ldr32_sx_cbnz_imm(void);
 extern void gadget_fused_ldr32_cbz_imm(void);
 extern void gadget_fused_ldr32_cbnz_imm(void);
 extern void gadget_fused_ldr16_cbz_imm(void);
@@ -1688,6 +1694,8 @@ static void count_ldr_cbz_candidate(struct gen_state *state, uint32_t rn, uint32
         if (rn == 31)
             ARM64_FUSION_STAT_INC(arm64_fusion_ldr64_sp_cbz64_candidate_count);
     }
+    if (size == 2 && sign_extend && ((next_insn >> 31) & 1))
+        ARM64_FUSION_STAT_INC(arm64_fusion_ldr32_sx_cbz64_candidate_count);
 }
 
 static int try_fuse_ldr64_cbz64(struct gen_state *state, uint32_t rn, uint32_t rt, uint32_t imm12) {
@@ -1746,6 +1754,38 @@ static int try_fuse_ldr64_sp_cbz64(struct gen_state *state, uint32_t rn, uint32_
     ARM64_FUSION_STAT_INC(arm64_fusion_ldr64_sp_cbz64_count);
     gen(state, (unsigned long)(is_cbnz ? gadget_fused_ldr64_sp_cbnz_imm : gadget_fused_ldr64_sp_cbz_imm));
     gen(state, rt | ((uint64_t)imm12 << 16));
+    gen(state, state->orig_ip);
+    gen(state, fake_target);
+    gen(state, fake_fallthrough);
+    state->jump_ip[0] = state->size - 2;
+    state->jump_ip[1] = state->size - 1;
+    return 0;
+}
+
+static int try_fuse_ldr32_sx_cbz64(struct gen_state *state, uint32_t rn, uint32_t rt, uint32_t imm12) {
+    if (rt == 31 || PAGE(state->orig_ip) != PAGE(state->ip))
+        return -1;
+
+    uint32_t next_insn;
+    if (!gen_peek_next_insn(state, &next_insn))
+        return -1;
+    if ((next_insn & 0x7e000000) != 0x34000000)
+        return -1;
+    if ((next_insn & 0x1f) != rt || ((next_insn >> 31) & 1) == 0)
+        return -1;
+
+    bool is_cbnz = (next_insn >> 24) & 1;
+    addr_t cbz_pc = state->ip;
+    state->ip += 4;
+
+    int64_t offset = arm64_branch_imm19(next_insn);
+    addr_t target = cbz_pc + offset;
+    unsigned long fake_target = (unsigned long)target | (1UL << 63);
+    unsigned long fake_fallthrough = (unsigned long)state->ip | (1UL << 63);
+
+    ARM64_FUSION_STAT_INC(arm64_fusion_ldr32_sx_cbz64_count);
+    gen(state, (unsigned long)(is_cbnz ? gadget_fused_ldr32_sx_cbnz_imm : gadget_fused_ldr32_sx_cbz_imm));
+    gen(state, rt | (rn << 8) | ((uint64_t)imm12 << 16));
     gen(state, state->orig_ip);
     gen(state, fake_target);
     gen(state, fake_fallthrough);
@@ -2831,6 +2871,8 @@ static int gen_ldst(struct gen_state *state, uint32_t insn) {
             if (!sign_extend && size == 3 && try_fuse_ldr64_cbz64(state, rn, rt, imm12) == 0)
                 return 0;
             if (!sign_extend && size == 3 && try_fuse_ldr64_sp_cbz64(state, rn, rt, imm12) == 0)
+                return 0;
+            if (sign_extend && size == 2 && try_fuse_ldr32_sx_cbz64(state, rn, rt, imm12) == 0)
                 return 0;
             if (!sign_extend && size == 2 && try_fuse_ldr32_cbz32(state, rn, rt, imm12) == 0)
                 return 0;
