@@ -219,7 +219,7 @@ ninja -C build-arm64-release
 
 使用 `benchmark/run.sh` 在 macOS 26.4.1 / Apple Silicon 上测试，采用 guest 内置计时
 （排除启动开销）。完整数据见
-**[benchmark/BENCHMARK_PERF.md](../benchmark/BENCHMARK_PERF.md)**。
+**[benchmark/BENCHMARK_PERF.md](benchmark/BENCHMARK_PERF.md)**。
 
 ### 相对原生的开销（按负载类型）
 
@@ -249,7 +249,7 @@ ninja -C build-arm64-release
 205 项测试覆盖 18 个分类（基础 OS、文件操作、文本处理、构建、Python、Node.js、
 Go/Rust/Perl/…、网络、VCS、编辑器、Shell、数据库、多媒体、加密、系统监控、调试、
 包管理、信号）。两个架构在相同 fakefs 环境下安装相同软件包后测试。完整报告见
-**[benchmark/BENCHMARK_COMPAT.md](../benchmark/BENCHMARK_COMPAT.md)**。
+**[benchmark/BENCHMARK_COMPAT.md](benchmark/BENCHMARK_COMPAT.md)**。
 
 | 架构 | 通过 | 失败 | 通过率 |
 |---|:---:|:---:|:---:|

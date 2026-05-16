@@ -18,11 +18,17 @@ This directory contains the supporting documentation for `ios-linuxkit`. The top
 
 ## Workload reports
 
+- [Benchmarks Game harness](BENCHMARKSGAME_HARNESS.md) — repeatable test harness for the Benchmarks Game smoke rows.
 - [Benchmarks Game matrix](BENCHMARKSGAME_MATRIX.md) — cross-language benchmark matrix and feasibility notes.
+- [Historical benchmark reports](benchmark/) — archived `ish-arm64` performance and compatibility reports from 2026-04-18.
 - Per-language Benchmarks Game reports: [GCC](BENCHMARKSGAME_GCC_SMOKE.md), [G++](BENCHMARKSGAME_GPP_SMOKE.md), [Go](BENCHMARKSGAME_GO_SMOKE.md), [Java-equivalent](BENCHMARKSGAME_JAVA_EQUIVALENT_SMOKE.md), [Lua](BENCHMARKSGAME_LUA_SMOKE.md), [Node](BENCHMARKSGAME_NODE_SMOKE.md), [Perl](BENCHMARKSGAME_PERL_SMOKE.md), [PHP](BENCHMARKSGAME_PHP_SMOKE.md), [Python](BENCHMARKSGAME_PYTHON_SMOKE.md), and [Ruby](BENCHMARKSGAME_RUBY_SMOKE.md).
 - [go-gte progress](GO_GTE_PROGRESS.md) — model conversion and Go runtime workload notes.
 
 ## Upstream and legacy material
 
 - [Original iSH README](ORIGINAL_ISH_README.md) — preserved upstream/fork README material.
-- [Legacy localized upstream READMEs](legacy/) — preserved Chinese, Japanese, and Korean README variants from upstream iSH.
+- [Legacy localized upstream READMEs](legacy/) — preserved Chinese, Japanese, and Korean README variants from upstream iSH, with provenance headers.
+
+## Conventional root files
+
+The only Markdown files intentionally left outside `docs/` are conventional repository metadata or generated tool files: top-level `README.md`, `LICENSE.md`, `SECURITY.md`, `ISSUE_TEMPLATE.md`, Fastlane's auto-generated `fastlane/README.md`, and the executable skill manifest `.pi/skills/*/SKILL.md`.

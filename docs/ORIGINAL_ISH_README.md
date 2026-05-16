@@ -1,3 +1,6 @@
+> **Provenance:** Preserved upstream/fork README material from [ish-app/ish](https://github.com/ish-app/ish), as carried by the pre-rebrand `ish-arm64` fork. Archived under `docs/` during the `ios-linuxkit` rebrand on 2026-05-16.
+>
+
 # [iSH](https://ish.app)
 
 > ## 🚀 ARM64 Fork Notice
@@ -30,7 +33,7 @@
 > Python `fib(30)` **9.2x faster**, `sum(1M)` **10.2x faster**, shell `seq+awk 100K` **7.2x faster**.
 >
 > **Full docs:** [ARM64 backend](ARM64_BACKEND.md) · [中文版](ARM64_BACKEND_ZH.md) ·
-> [Performance report](../benchmark/BENCHMARK_PERF.md) · [Compatibility report](../benchmark/BENCHMARK_COMPAT.md)
+> [Performance report](benchmark/BENCHMARK_PERF.md) · [Compatibility report](benchmark/BENCHMARK_COMPAT.md)
 >
 > ---
 

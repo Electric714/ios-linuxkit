@@ -428,7 +428,7 @@ See also:
 
 Measured with `benchmark/run.sh` on macOS 26.4.1 / Apple Silicon using guest-side
 timing (startup overhead excluded). Full details in
-**[benchmark/BENCHMARK_PERF.md](../benchmark/BENCHMARK_PERF.md)**.
+**[benchmark/BENCHMARK_PERF.md](benchmark/BENCHMARK_PERF.md)**.
 
 ### Overhead vs Native (by workload)
 
@@ -459,7 +459,7 @@ timing (startup overhead excluded). Full details in
 205 tests across 18 categories (Core OS, FileOps, Text, Build, Python, Node.js, Go/Rust/Perl/…,
 Network, VCS, Editors, Shell, DB, Media, Crypto, SysMon, Debug, PkgMgr, Signal). Both
 architectures tested under fakefs with the same installed package set. Full report:
-**[benchmark/BENCHMARK_COMPAT.md](../benchmark/BENCHMARK_COMPAT.md)**.
+**[benchmark/BENCHMARK_COMPAT.md](benchmark/BENCHMARK_COMPAT.md)**.
 
 | Architecture | Pass | Fail | Rate |
 |---|:---:|:---:|:---:|
@@ -553,11 +553,13 @@ iSH/
 │   ├── ISHShellExecutor.h/m     # Shell execution API
 │   ├── DebugServer.c/h          # JSON-RPC debug server
 │   └── RootfsPatch.bundle/      # Versioned rootfs overlay
-└── benchmark/
-    ├── run.sh                    # Unified benchmark entry point
-    ├── assets/                   # shellbench.sh + cbench_lite + prebuilt binaries
-    ├── BENCHMARK_PERF.md         # Performance report
-    └── BENCHMARK_COMPAT.md       # Compatibility report
+├── benchmark/
+│   ├── run.sh                    # Unified benchmark entry point
+│   └── assets/                   # shellbench.sh + cbench_lite + prebuilt binaries
+└── docs/
+    └── benchmark/
+        ├── BENCHMARK_PERF.md     # Archived performance report
+        └── BENCHMARK_COMPAT.md   # Archived compatibility report
 ```
 
 ---
