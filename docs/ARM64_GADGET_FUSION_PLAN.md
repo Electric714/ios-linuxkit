@@ -209,6 +209,19 @@ Phase 2H implementation tranche:
   - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-012058.md`, **10 / 10 passing**, no stats output.
   - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-012138.md`, **66 / 66 passing**.
 
+Phase 2I implementation tranche:
+
+- Implemented narrow adjacent same-page `LDRH Wt, [Xn, #imm] + CBZ/CBNZ Wt` fusion for non-SP bases and non-XZR destinations.
+- The fused gadget writes the LDRH guest PC into `LOCAL_jit_saved_pc` before the faultable memory access, zero-extends and stores the loaded halfword before branching, then applies the 32-bit CBZ/CBNZ condition.
+- Added runtime fixtures:
+  - `arm64 ldr16 cbz fusion` for taken/not-taken CBZ/CBNZ behavior plus zero-extended loaded-register side effects.
+  - `arm64 fused ldr16 cbz fault pc` for precise LDRH fault PC and no destination-register write on fault.
+- Validation reports:
+  - Targeted success/fault smokes: `ldr16-cbz-fusion-ok`, `fused-ldr16-cbz-fault-ok`.
+  - Counter-enabled Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-013808.md`, **10 / 10 passing**. Representative fusion hits: Node eval `ldr16_cbz32=71`, Node JSON `144`, Bun eval `239`, Bun JSON `623`.
+  - Default/no-stats Node/Bun perf: `/workspace/tmp/ish-arm64-node-bun-perf-20260516-013858.md`, **10 / 10 passing**, no stats output.
+  - Core Alpine runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-013939.md`, **68 / 68 passing**.
+
 ## Phase 3: linear superblocks
 
 Phase 3 should wait until the Phase 1 fusion tranche is stable across repeated Node/Bun and core runtime runs. Initial design remains same-page and conservative:
