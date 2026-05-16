@@ -138,6 +138,7 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
 
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
     if ([message.name isEqualToString:@"load"]) {
+        NSLog(@"terminal frontend loaded");
         self.loaded = YES;
         [self.refreshTask schedule];
         // make sure this setting works if it's set before loading

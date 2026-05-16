@@ -28,7 +28,7 @@
 #include "fs/dyndev.h"
 #include "fs/devices.h"
 #include "fs/path.h"
-#if defined(GUEST_ARM64)
+#if !ISH_LINUX && defined(GUEST_ARM64)
 #include "DebugServer.h"
 #endif
 #include "kernel/native_offload.h"

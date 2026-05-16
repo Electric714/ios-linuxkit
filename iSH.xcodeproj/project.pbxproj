@@ -114,6 +114,9 @@
 		AA000034AF96D90D00FFB7A4 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BBAEE338249B58E80069EBB5 /* libbz2.tbd */; };
 		AA000035AF96D90D00FFB7A4 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BB6DB260216435330047A611 /* libiconv.tbd */; };
 		AA000036AF96D90D00FFB7A4 /* libresolv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFB55652158644C00DFE6DE /* libresolv.tbd */; };
+		AA000037AF96D90D00FFB7A4 /* libish.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BB13F7DC200AD81D003D1C4D /* libish.a */; };
+		AA000038AF96D90D00FFB7A4 /* libfakefs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BB21A16F2689041500BD19B4 /* libfakefs.a */; };
+		AA000039AF96D90D00FFB7A4 /* libish_emu.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BBFB2C5B2590257E00545EAB /* libish_emu.a */; };
 		AA000040AF96D90D00FFB7A4 /* Terminal.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BB792B591F96D90D00FFB7A4 /* Terminal.storyboard */; };
 		AA000041AF96D90D00FFB7A4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB792B5C1F96D90D00FFB7A4 /* Assets.xcassets */; };
 		AA000042AF96D90D00FFB7A4 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BB792B5E1F96D90D00FFB7A4 /* LaunchScreen.storyboard */; };
@@ -864,6 +867,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA000037AF96D90D00FFB7A4 /* libish.a in Frameworks */,
+				AA000038AF96D90D00FFB7A4 /* libfakefs.a in Frameworks */,
+				AA000039AF96D90D00FFB7A4 /* libish_emu.a in Frameworks */,
 				AA000031AF96D90D00FFB7A4 /* libarchive.a in Frameworks */,
 				AA000032AF96D90D00FFB7A4 /* CoreLocation.framework in Frameworks */,
 				AA000033AF96D90D00FFB7A4 /* SystemConfiguration.framework in Frameworks */,
@@ -2065,7 +2071,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "curl -L \"https://$ROOTFS_URL\" -o \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/root.tar.gz\"\n";
+			shellScript = "sh \"$SRCROOT/app/download-root.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		AA000012AF96D90D00FFB7A4 /* Generate APK Repositories File */ = {
@@ -2120,7 +2126,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"$SRCROOT/app/xcode-meson.sh\"\ncd \"$MESON_BUILD_DIR\"\n\"$SRCROOT/app/xcode-ninja.sh\" $NINJA_TARGETS\n";
+			shellScript = "\"$SRCROOT/app/xcode-meson.sh\"\ncd \"$MESON_BUILD_DIR\"\n\"$SRCROOT/app/xcode-ninja.sh\" $NINJA_TARGETS\nmkdir -p \"$CONFIGURATION_BUILD_DIR\"\nln -sf \"$MESON_BUILD_DIR/libish.a\" \"$CONFIGURATION_BUILD_DIR/libish.a\"\nln -sf \"$MESON_BUILD_DIR/libish_emu.a\" \"$CONFIGURATION_BUILD_DIR/libish_emu.a\"\nln -sf \"$MESON_BUILD_DIR/libfakefs.a\" \"$CONFIGURATION_BUILD_DIR/libfakefs.a\"\n";
 		};
 		BB034E8C263643C10000A498 /* Generate APK Repositories File */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2130,8 +2136,6 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/deps/aports/main/x86/index.txt",
-				"$(SRCROOT)/deps/aports/community/x86/index.txt",
 				"$(SRCROOT)/app/gen_apk_repositories.py",
 			);
 			name = "Generate APK Repositories File";
@@ -2241,7 +2245,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "curl -L \"https://$ROOTFS_URL\" -o \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/root.tar.gz\"\n";
+			shellScript = "sh \"$SRCROOT/app/download-root.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		BBEF197A268066D1001225BD /* Generate APK Repositories File */ = {
@@ -2252,8 +2256,6 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/deps/aports/main/x86/index.txt",
-				"$(SRCROOT)/deps/aports/community/x86/index.txt",
 				"$(SRCROOT)/app/gen_apk_repositories.py",
 			);
 			name = "Generate APK Repositories File";
@@ -2296,7 +2298,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "curl -L \"https://$ROOTFS_URL\" -o \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/root.tar.gz\"\n";
+			shellScript = "sh \"$SRCROOT/app/download-root.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		BBFB2C572590257E00545EAB /* ShellScript */ = {
@@ -2942,7 +2944,7 @@
 		};
 		BB7F62072688EAB5003C0220 /* DebugLinux */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BB0B86CD2586FD8800208600 /* App.xcconfig */;
+			baseConfigurationReference = AA000015AF96D90D00FFB7A4 /* AppARM64.xcconfig */;
 			buildSettings = {
 			};
 			name = DebugLinux;
@@ -3192,7 +3194,7 @@
 		};
 		BBEF19AD26806D1F001225BD /* ReleaseLinux */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BB0B86CD2586FD8800208600 /* App.xcconfig */;
+			baseConfigurationReference = AA000015AF96D90D00FFB7A4 /* AppARM64.xcconfig */;
 			buildSettings = {
 			};
 			name = ReleaseLinux;

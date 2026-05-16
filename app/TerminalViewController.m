@@ -152,6 +152,7 @@
 - (void)startNewSession {
     int err = [self startSession];
     if (err < 0) {
+        NSLog(@"could not start session: %d", err);
         [self showMessage:@"could not start session"
                  subtitle:[NSString stringWithFormat:@"error code %d", err]];
     }

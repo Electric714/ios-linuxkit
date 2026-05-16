@@ -106,13 +106,13 @@ static NSString *const HANDLERS[] = {@"syncFocus", @"focus", @"newScrollHeight",
     }
 
     _terminal = terminal;
+    if (_terminal == nil)
+        return;
     [_terminal addObserver:self forKeyPath:@"loaded" options:NSKeyValueObservingOptionInitial context:nil];
-    if (_terminal.loaded)
-        [self installTerminalView];
+    [self installTerminalView];
 }
 
 - (void)installTerminalView {
-    NSAssert(_terminal.loaded, @"should probably not be installing a non-loaded terminal");
     UIView *superview = self.terminal.webView.superview;
     if (superview != nil) {
         NSAssert(superview == self.scrollbarView, @"installing terminal that is already installed elsewhere");
@@ -120,7 +120,8 @@ static NSString *const HANDLERS[] = {@"syncFocus", @"focus", @"newScrollHeight",
     }
 
     WKWebView *webView = _terminal.webView;
-    _terminal.enableVoiceOverAnnounce = YES;
+    if (_terminal.loaded)
+        _terminal.enableVoiceOverAnnounce = YES;
     webView.scrollView.scrollEnabled = NO;
     webView.scrollView.delaysContentTouches = NO;
     webView.scrollView.canCancelContentTouches = NO;

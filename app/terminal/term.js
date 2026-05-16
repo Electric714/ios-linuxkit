@@ -1,290 +1,169 @@
-import { DEFAULT_THEME, init, Terminal, FitAddon } from './ghostty-web.js';
+hterm.defaultStorage = new lib.Storage.Memory();
+window.onload = async function() {
+    await lib.init();
+    window.term = new hterm.Terminal();
 
-// Shorthand for JS -> native IPC. Keep the same message-handler names used by
-// Terminal.m / TerminalView.m so the Objective-C side does not need a new bridge.
+    // make everything invisible so as to not be embarrassing
+    term.getPrefs().set('background-color', 'transparent');
+    term.getPrefs().set('foreground-color', 'transparent');
+    term.getPrefs().set('cursor-color', 'transparent');
+
+    term.getPrefs().set('terminal-encoding', 'iso-2022');
+    term.getPrefs().set('enable-resize-status', false);
+    term.getPrefs().set('copy-on-select', false);
+    term.getPrefs().set('enable-clipboard-notice', false);
+    term.getPrefs().set('user-css-text', termCss);
+    term.getPrefs().set('screen-padding-size', 4);
+    // Creating and preloading the <audio> element for this sometimes hangs WebKit on iOS 16 for some reason.
+    term.getPrefs().set('audible-bell-sound', '');
+
+    term.onTerminalReady = onTerminalReady;
+    term.decorate(document.getElementById('terminal'));
+};
+
+var termCss = `
+x-screen {
+    background: transparent !important;
+    overflow: hidden !important;
+    -webkit-tap-highlight-color: transparent;
+}
+x-row {
+  text-rendering: optimizeLegibility;
+  font-variant-ligatures: normal;
+}
+.uri-node {
+  text-decoration: underline;
+}
+`;
+
+function onTerminalReady() {
+
+// Shorthand for JS -> native IPC
 const native = new Proxy({}, {
-    get(_obj, prop) {
+    get(obj, prop) {
         return (...args) => {
-            if (!window.webkit?.messageHandlers?.[prop])
-                return;
-            let body;
-            if (args.length === 0)
-                body = null;
-            else if (args.length === 1)
-                body = args[0];
-            else
-                body = args;
-            window.webkit.messageHandlers[prop].postMessage(body);
+            if (args.length == 0)
+                args = null;
+            else if (args.length == 1)
+                args = args[0];
+            webkit.messageHandlers[prop].postMessage(args);
         };
     },
 });
 
-const ANSI_COLOR_NAMES = [
-    'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white',
-    'brightBlack', 'brightRed', 'brightGreen', 'brightYellow', 'brightBlue',
-    'brightMagenta', 'brightCyan', 'brightWhite',
-];
+// Functions for native -> JS
+window.exports = {};
 
-const cursorShapeMap = {
-    BLOCK: 'block',
-    BEAM: 'bar',
-    UNDERLINE: 'underline',
+term.io.push();
+term.reset();
+
+let oldProps = {};
+function syncProp(name, value) {
+    if (oldProps[name] !== value)
+        native.propUpdate(name, value);
+    oldProps[name] = value;
+}
+let decoder = new TextDecoder();
+exports.write = (data) => {
+    term.io.writeUTF16(decoder.decode(lib.codec.stringToCodeUnitArray(data)));
+    syncProp('applicationCursor', term.keyboard.applicationCursor);
+};
+term.io.sendString = term.io.onVTKeyStroke = (data) => {
+    native.sendInput(data);
 };
 
-let term;
-let fitAddon;
-let lastApplicationCursor;
-let lastScrollHeight;
-let lastScrollTop;
-let pendingStyle = null;
+// hterm size updates native size
+term.io.onTerminalResize = () => native.resize();
+exports.getSize = () => [term.screenSize.width, term.screenSize.height];
 
-window.exports = {
-    write,
-    getSize,
-    copy,
-    clearScrollback,
-    setFocused,
-    scrollToBottom,
-    newScrollTop,
-    updateStyle,
-    getCharacterSize,
-    setUserGesture,
-    setAccessibilityEnabled,
-};
+// selection, copying
+term.scrollPort_.screen_.contentEditable = false;
+term.blur();
+term.focus();
+exports.copy = () => term.copySelectionToClipboard();
 
-window.addEventListener('load', async () => {
-    try {
-        await init();
-
-        term = new Terminal({
-            cols: 80,
-            rows: 24,
-            cursorBlink: true,
-            fontSize: 15,
-            fontFamily: '"FiraCode Nerd Font Mono", Menlo, Monaco, "Courier New", monospace',
-            scrollback: 10000,
-            smoothScrollDuration: 0,
-            scrollbarWidth: 0,
-            theme: {
-                background: '#000000',
-                foreground: '#ffffff',
-                cursor: '#ffffff',
-            },
-            onLinkClick: (url) => {
-                native.openLink(url);
-                return true;
-            },
-        });
-
-        fitAddon = new FitAddon();
-        term.loadAddon(fitAddon);
-
-        term.onData((data) => native.sendInput(data));
-        term.onResize(() => {
-            syncWindowSize();
-            syncScroll();
-        });
-        term.onScroll(() => syncScroll());
-        term.onRender(() => {
-            syncApplicationCursor();
-            syncScroll();
-        });
-
-        term.open(document.getElementById('terminal'));
-        fit();
-        if (pendingStyle)
-            applyStyle(pendingStyle);
-
-        if (typeof ResizeObserver === 'function') {
-            const resizeObserver = new ResizeObserver(() => {
-                fit();
-                syncWindowSize();
-                syncScroll();
-            });
-            resizeObserver.observe(document.getElementById('terminal'));
-        }
-        window.addEventListener('resize', () => {
-            fit();
-            syncWindowSize();
-            syncScroll();
-        });
-
-        syncApplicationCursor();
-        syncWindowSize();
-        syncScroll(true);
-        native.load();
-        native.syncFocus();
-    } catch (error) {
-        native.log(`ghostty terminal init failed: ${error?.stack || error}`);
-        throw error;
+// focus
+// This listener blocks blur events that come in because the webview has lost first responder
+term.scrollPort_.screen_.addEventListener('blur', (e) => {
+    if (e.target.ownerDocument.activeElement == e.target) {
+        e.stopPropagation();
     }
+}, {capture: true});
+term.scrollPort_.screen_.addEventListener('mousedown', (e) => {
+    // Taps while there is a selection should be left to the selection view
+    if ((document.getSelection().rangeCount != 0) &&
+        (!document.getSelection().isCollapsed)) return;
+    native.focus();
 });
-
-function fit() {
-    if (!fitAddon || !term)
-        return;
-    fitAddon.fit();
-}
-
-function stringToBytes(data) {
-    const bytes = new Uint8Array(data.length);
-    for (let i = 0; i < data.length; i++)
-        bytes[i] = data.charCodeAt(i) & 0xff;
-    return bytes;
-}
-
-function write(data) {
-    if (!term)
-        return;
-    if (typeof data === 'string')
-        term.write(stringToBytes(data));
-    else
-        term.write(data);
-    syncApplicationCursor();
-    syncScroll();
-}
-
-function getSize() {
-    if (!term)
-        return [80, 24];
-    return [term.cols, term.rows];
-}
-
-function copy() {
-    term?.copySelection();
-}
-
-function clearScrollback() {
-    // ghostty-web does not expose hterm's exact clearScrollback primitive yet.
-    // Match the user's visible expectation: clear the screen and return to the
-    // bottom of history.
-    term?.clear();
-    term?.scrollToBottom();
-    syncScroll(true);
-}
-
-function setFocused(focus) {
-    if (!term)
-        return;
+exports.setFocused = (focus) => {
     if (focus)
         term.focus();
     else
         term.blur();
-}
+};
+term.scrollPort_.screen_.addEventListener('focus', (e) => native.syncFocus());
 
-function scrollToBottom() {
-    term?.scrollToBottom();
-    syncScroll(true);
-}
+// scrolling
+// Disable hterm builtin touch scrolling
+term.scrollPort_.onTouch = (e) => {
+    // Convince hterm that we called preventDefault() and that it shouldn't do more handling, but don't actually call it because that would break text selection
+    Object.defineProperty(e, 'defaultPrevented', {value: true});
+};
+// Scroll to bottom wrapper
+exports.scrollToBottom = () => term.scrollEnd();
+// Set scroll position
+exports.newScrollTop = (y) => {
+    // two lines instead of one because the value you read out of scrollTop can be different from the value you write into it
+    term.scrollPort_.screen_.scrollTop = y;
+    lastScrollTop = term.scrollPort_.screen_.scrollTop;
+};
 
-function newScrollTop(y) {
-    if (!term)
-        return;
-    const charHeight = getCharacterSize()[1] || 1;
-    const scrollback = term.getScrollbackLength?.() || 0;
-    const lineFromTop = Math.max(0, Math.round(y / charHeight));
-    const viewportFromBottom = Math.max(0, Math.min(scrollback, scrollback - lineFromTop));
-    term.scrollToLine(viewportFromBottom);
-    syncScroll(true);
-}
-
-function updateStyle(style) {
-    pendingStyle = style;
-    if (!term)
-        return;
-    applyStyle(style);
-}
-
-function applyStyle({ foregroundColor, backgroundColor, fontFamily, fontSize, colorPaletteOverrides, blinkCursor, cursorShape }) {
-    const theme = {
-        ...DEFAULT_THEME,
-        foreground: foregroundColor,
-        background: backgroundColor,
-        cursor: foregroundColor,
-    };
-    if (Array.isArray(colorPaletteOverrides)) {
-        for (let i = 0; i < Math.min(colorPaletteOverrides.length, ANSI_COLOR_NAMES.length); i++) {
-            if (colorPaletteOverrides[i])
-                theme[ANSI_COLOR_NAMES[i]] = colorPaletteOverrides[i];
-        }
-    }
-
-    term.options.theme = theme;
-    term.options.fontFamily = fontFamily;
-    term.options.fontSize = fontSize;
-    term.options.cursorBlink = !!blinkCursor;
-    term.options.cursorStyle = cursorShapeMap[cursorShape] || 'block';
-
-    // Font/style changes alter cell metrics; refit and publish the new PTY size.
-    const fontReady = document.fonts?.load
-        ? document.fonts.load(`${fontSize}px ${cssFontFamily(fontFamily)}`).catch(() => {})
-        : Promise.resolve();
-    fontReady.finally(() => {
-        fit();
-        syncWindowSize();
-        syncScroll(true);
-    });
-    fit();
-    syncWindowSize();
-    syncScroll(true);
-}
-
-function cssFontFamily(fontFamily) {
-    if (typeof fontFamily !== 'string' || fontFamily.length === 0)
-        return '"FiraCode Nerd Font Mono"';
-    if (fontFamily.includes(',') || /^(["']).*\1$/.test(fontFamily))
-        return fontFamily;
-    return `"${fontFamily.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-function getCharacterSize() {
-    const renderer = term?.renderer;
-    if (!renderer)
-        return [8, 16];
-    if (renderer.getMetrics) {
-        const metrics = renderer.getMetrics();
-        return [metrics.width, metrics.height];
-    }
-    return [renderer.charWidth || 8, renderer.charHeight || 16];
-}
-
-function setUserGesture() {
-    // hterm-specific accessibility hook; no equivalent is required for ghostty-web.
-}
-
-function setAccessibilityEnabled(_enabled) {
-    // hterm exposed a screen-reader toggle. Ghostty-Web does not currently need
-    // one, but Terminal.m still calls through this bridge when views attach or
-    // detach. Keep the endpoint explicit so those calls do not throw in WKWebView.
-}
-
-function syncWindowSize() {
-    native.resize();
-}
-
-function syncApplicationCursor() {
-    const applicationCursor = !!term?.wasmTerm?.getMode?.(1, false);
-    if (applicationCursor !== lastApplicationCursor) {
-        lastApplicationCursor = applicationCursor;
-        native.propUpdate('applicationCursor', applicationCursor);
-    }
-}
-
-function syncScroll(force = false) {
-    if (!term)
-        return;
-    const charHeight = getCharacterSize()[1] || 1;
-    const scrollback = term.getScrollbackLength?.() || 0;
-    const viewportY = term.getViewportY?.() || 0;
-    const scrollHeight = (scrollback + term.rows) * charHeight;
-    const scrollTop = Math.max(0, (scrollback - viewportY) * charHeight);
-
-    if (force || scrollHeight !== lastScrollHeight) {
-        lastScrollHeight = scrollHeight;
+// Send scroll height and position to native code
+let lastScrollHeight, lastScrollTop;
+function syncScroll() {
+    const scrollHeight = parseFloat(term.scrollPort_.scrollArea_.style.height);
+    if (scrollHeight != lastScrollHeight)
         native.newScrollHeight(scrollHeight);
-    }
-    if (force || scrollTop !== lastScrollTop) {
-        lastScrollTop = scrollTop;
+    lastScrollHeight = scrollHeight;
+
+    const scrollTop = term.scrollPort_.screen_.scrollTop;
+    if (scrollTop != lastScrollTop)
         native.newScrollTop(scrollTop);
-    }
+    lastScrollTop = scrollTop;
+}
+
+const realSyncScrollHeight = hterm.ScrollPort.prototype.syncScrollHeight;
+hterm.ScrollPort.prototype.syncScrollHeight = function() {
+    realSyncScrollHeight.call(this);
+    syncScroll();
+};
+term.scrollPort_.screen_.addEventListener('scroll', syncScroll);
+
+exports.updateStyle = ({foregroundColor, backgroundColor, fontFamily, fontSize, colorPaletteOverrides, blinkCursor, cursorShape}) => {
+    term.getPrefs().set('background-color', backgroundColor);
+    term.getPrefs().set('foreground-color', foregroundColor);
+    term.getPrefs().set('cursor-color', foregroundColor);
+    term.getPrefs().set('font-family', fontFamily);
+    term.getPrefs().set('font-size', fontSize);
+    term.getPrefs().set('color-palette-overrides', colorPaletteOverrides);
+    term.getPrefs().set('cursor-blink', blinkCursor);
+    term.getPrefs().set('cursor-shape', cursorShape);
+};
+
+exports.getCharacterSize = () => {
+    return [term.scrollPort_.characterSize.width, term.scrollPort_.characterSize.height];
+};
+
+exports.clearScrollback = () => term.clearScrollback();
+exports.setUserGesture = () => term.accessibilityReader_.hasUserGesture = true;
+exports.setAccessibilityEnabled = (enabled) => {
+    if (term.accessibilityReader_)
+        term.accessibilityReader_.accessibilityEnabled = enabled;
+};
+
+hterm.openUrl = (url) => native.openLink(url);
+
+native.load();
+native.syncFocus();
+
 }
