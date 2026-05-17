@@ -8,13 +8,13 @@ ISH_BIN="${ISH_BIN:-$PROJECT_DIR/build-arm64-linux/ish}"
 ROOTFS="${ROOTFS:-$PROJECT_DIR/alpine-arm64-fakefs}"
 ROOTFS_LANES="${ROOTFS_LANES:-default=$ROOTFS}"
 LANE_NAME="${LANE_NAME:-default}"
-AI_CLI_PACKAGE_MANAGERS="${AI_CLI_PACKAGE_MANAGERS:-npm bun pip}"
+CLI_PACKAGE_MANAGERS="${CLI_PACKAGE_MANAGERS:-npm bun pip}"
 TIMEOUT_S="${TIMEOUT_S:-180}"
 INSTALL_TIMEOUT_S="${INSTALL_TIMEOUT_S:-1800}"
 REPORT_DIR="${REPORT_DIR:-/workspace/tmp}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-REPORT="$REPORT_DIR/ish-arm64-ai-cli-runtime-coverage-$STAMP.md"
-GUEST_WORK="/tmp/ai-cli-runtime-coverage"
+REPORT="$REPORT_DIR/ish-arm64-cli-package-runtime-coverage-$STAMP.md"
+GUEST_WORK="/tmp/cli-package-runtime-coverage"
 HOST_TMP="$(mktemp -d)"
 
 PASS_COUNT=0
@@ -105,7 +105,7 @@ run_install_test() {
 want_package_manager() {
     local wanted="$1"
     local pm
-    for pm in $AI_CLI_PACKAGE_MANAGERS; do
+    for pm in $CLI_PACKAGE_MANAGERS; do
         [ "$pm" = "$wanted" ] && return 0
     done
     return 1
@@ -225,7 +225,7 @@ fi
 run_probe() {
     probe_name="$1"
     shift
-    out_file="/tmp/ai-cli-runtime-coverage/probe.out"
+    out_file="/tmp/cli-package-runtime-coverage/probe.out"
     set +e
     "$@" >"$out_file" 2>&1
     rc=$?
@@ -258,7 +258,7 @@ run_probe help-subcommand "$bin" help || true
 run_probe version "$bin" --version || true
 
 echo "no acceptable startup/help/version output from $bin" >&2
-sed -n '1,20p' /tmp/ai-cli-runtime-coverage/probe.out 2>/dev/null || true
+sed -n '1,20p' /tmp/cli-package-runtime-coverage/probe.out 2>/dev/null || true
 exit 1
 EOF
     chmod +x "$dir/smoke-bin.sh"
@@ -267,12 +267,12 @@ EOF
 
 write_report() {
     cat >"$REPORT" <<EOF
-# iSH ARM64 AI CLI Runtime Coverage Report
+# iSH ARM64 CLI Package Runtime Coverage Report
 
 - Timestamp: $(date -Is)
 - ish binary: $ISH_BIN
 - rootfs lanes: $ROOTFS_LANES
-- package managers: $AI_CLI_PACKAGE_MANAGERS
+- package managers: $CLI_PACKAGE_MANAGERS
 - timeout: ${TIMEOUT_S}s
 - install timeout: ${INSTALL_TIMEOUT_S}s
 
@@ -284,7 +284,7 @@ write_report() {
 
 ## Scope
 
-This second runtime coverage set installs AI coding/LLM CLIs through npm/node and Bun package-manager paths where JavaScript packages and executable entrypoints are available, plus pip/venv where the official CLI is Python-only. It intentionally runs only unauthenticated startup/version/help probes; no API keys or user credentials are required or consumed.
+This second runtime coverage set installs fast-moving CLI packages through npm/node and Bun package-manager paths where JavaScript packages and executable entrypoints are available, plus pip/venv where a package is Python-only. It intentionally runs only unauthenticated startup/version/help probes; no API keys or user credentials are required or consumed.
 
 ## Package matrix
 
@@ -292,12 +292,12 @@ This second runtime coverage set installs AI coding/LLM CLIs through npm/node an
 |---|---|---|---|
 | Claude Code | \`@anthropic-ai/claude-code\` | \`claude\` | Official npm package. |
 | OpenAI Codex | \`@openai/codex\` | \`codex\` | Official npm package. |
-| Pi / pi.dev | \`@earendil-works/pi-coding-agent\` | \`pi\` | npm package behind the Pi coding-agent CLI. |
-| Mistral Vibe | \`mistral-vibe\` | \`vibe\` | Official Mistral CLI coding agent; Python package installed via pip/venv. |
+| Pi CLI | \`@earendil-works/pi-coding-agent\` | \`pi\` | npm package behind the Pi CLI. |
+| Mistral Vibe | \`mistral-vibe\` | \`vibe\` | Mistral CLI package installed via pip/venv. |
 | GitHub Copilot | \`@github/copilot\` | \`copilot\` | GitHub Copilot npm CLI package. |
 | OpenCode | \`opencode-ai\` | \`opencode\` | Official OpenCode npm package. |
 | Gemini CLI | \`@google/gemini-cli\` | \`gemini\` | Official Google Gemini CLI npm package. |
-| Grok CLI | \`grok-cli\` | \`grok\` | Community Grok/xAI proxy wrapper that launches Claude Code; npm-only unauthenticated help row stubs \`keytar\` to avoid native keychain access. |
+| Grok CLI | \`grok-cli\` | \`grok\` | Community wrapper package; npm-only unauthenticated help row stubs \`keytar\` to avoid native keychain access. |
 
 ## Results
 

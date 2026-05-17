@@ -2,7 +2,7 @@
 
 ![](docs/icon-256.png)
 
-`ios-linuxkit` is an ARM64 Linux runtime for iOS projects. It builds on the `ish-arm64` work in [iSH](https://ish.app/) and focuses on a testable guest environment for shells, package managers, compilers, language runtimes, and agent tooling on iPhone and iPad.
+`ios-linuxkit` is an ARM64 Linux runtime for iOS projects. It builds on the `ish-arm64` work in [iSH](https://ish.app/) and focuses on a testable guest environment for shells, package managers, compilers, language runtimes, and CLI tooling on iPhone and iPad.
 
 The terminal app in this repository is a reference shell. The reusable parts are the ARM64 guest runtime, syscall/filesystem/network compatibility work, and the Linux-host test harnesses used to keep regressions visible.
 
@@ -21,7 +21,7 @@ The terminal app in this repository is a reference shell. The reusable parts are
 | Gate | Result | Notes |
 |---|---:|---|
 | Core runtime coverage | **83 / 83 passing** | Alpine ARM64 fakefs; no `SAFETY-VALVE` or `NETDIAG` diagnostics in the latest report. |
-| AI/agent CLI npm lane | **16 / 16 passing** | Kept separate because npm packages move quickly. |
+| npm CLI package lane | **16 / 16 passing** | Kept separate because npm packages move quickly. |
 | CLI corner-case smoke | **27 pass / 2 unsupported / 0 fail** | Docker daemon/container rows are recorded as unsupported when kernel primitives are absent. |
 | Benchmarks Game rows | **10 / 10 per row** | GCC, G++, Go, Python, Node.js, PHP, Perl, Ruby, Lua. |
 | Java-equivalent Benchmarks Game | **10 / 10** | Mixed-mode and interpreter fallback both pass. |
@@ -35,7 +35,7 @@ See [runtime validation](docs/RUNTIME_VALIDATION.md) for commands, reports, and 
 | Build Linux ARM64 variants | `make build-arm64-linux-all` |
 | Core runtime gate | `make test-arm64-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1200` |
 | CLI corner cases | `make test-arm64-cli-corner-smoke ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=240 INSTALL_TIMEOUT_S=1200` |
-| AI/agent CLI lane | `make test-arm64-ai-cli-npm-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1800` |
+| npm CLI package lane | `make test-arm64-npm-cli-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1800` |
 | Node/Bun timing table | `make test-arm64-node-bun-perf ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180` |
 
 Generated reports are Markdown files under `REPORT_DIR`. A row is not a pass if it times out, is force-killed, or emits diagnostics the harness classifies as runtime failure.
@@ -47,7 +47,6 @@ Generated reports are Markdown files under `REPORT_DIR`. A row is not a pass if 
 | Why not upstream iSH as-is? | The i386 guest limits address space and runtime compatibility. This fork targets ARM-on-ARM interactive use. |
 | Is this an App Store product? | No. The checked-in app is a reference terminal and packaging harness. |
 | Why rename it? | To avoid confusion with upstream iSH and make the runtime-kit goal explicit. |
-| Was AI used? | Some repetitive test/fix loops were AI-assisted under human direction; the test strategy and runtime changes are human-maintained. |
 
 ## Documentation
 

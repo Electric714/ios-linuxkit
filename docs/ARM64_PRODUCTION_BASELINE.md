@@ -5,8 +5,8 @@ Reviewed: 2026-05-16
 
 ## Known-good code
 
-- Code baseline: current `master`, successor to tagged validation point `arm64-openjdk21-prod-20260513-r6`; this pass includes expanded language/runtime coverage, ARM64 sysreg/FP16 conversion fixes, bounds-checked path/symlink expansion, guest-signal-aware blocking I/O/exit cleanup, socket ABI hardening through ARM64 `SCM_RIGHTS` control-message validation, `fchmodat2(AT_EMPTY_PATH)` and scheduler priority syscall coverage, AI CLI startup coverage including community `grok-cli`, Docker CLI/daemon unsupported diagnostics, opt-in ARM64 internal-continue/taken-internal validation, C# NativeAOT SDK availability, and reservation-aware high-address `MAP_NORESERVE` handling.
-- Previous tagged production audit baseline: `arm64-openjdk21-prod-20260513-r6` (post-r5 validation point covering 44/44 staged coverage, Benchmarks Game refresh, Java mixed/interpreter probes, and go-gte smoke; current `master` adds the later Rust/Cargo, socket ABI, AI CLI, `fchmodat2`, scheduler priority syscall, Docker diagnostic, C# NativeAOT SDK-availability, internal-continue/taken-internal, and high-address reservation audit fixes).
+- Code baseline: current `master`, successor to tagged validation point `arm64-openjdk21-prod-20260513-r6`; this pass includes expanded language/runtime coverage, ARM64 sysreg/FP16 conversion fixes, bounds-checked path/symlink expansion, guest-signal-aware blocking I/O/exit cleanup, socket ABI hardening through ARM64 `SCM_RIGHTS` control-message validation, `fchmodat2(AT_EMPTY_PATH)` and scheduler priority syscall coverage, npm CLI package startup coverage, Docker CLI/daemon unsupported diagnostics, opt-in ARM64 internal-continue/taken-internal validation, C# NativeAOT SDK availability, and reservation-aware high-address `MAP_NORESERVE` handling.
+- Previous tagged production audit baseline: `arm64-openjdk21-prod-20260513-r6` (post-r5 validation point covering 44/44 staged coverage, Benchmarks Game refresh, Java mixed/interpreter probes, and go-gte smoke; current `master` adds the later Rust/Cargo, socket ABI, npm CLI package lane, `fchmodat2`, scheduler priority syscall, Docker diagnostic, C# NativeAOT SDK-availability, internal-continue/taken-internal, and high-address reservation audit fixes).
 - Branch: `master`.
 - Remote target for this working branch: `https://github.com/rcarmo/ios-linuxkit.git`; `origin` is configured to this repository for fetch and push.
 
@@ -50,9 +50,9 @@ Reviewed: 2026-05-16
 - Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260516-211305.md`
   - Result: 83 / 83 passing
   - Includes no-safety-valve/no-NETDIAG Rust Cargo/std coverage, Erlang helper-thread cleanup validation, UDP/TCP socket-option and `sendmsg`/`recvmsg`/`SCM_RIGHTS` ABI coverage, `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall coverage, high-address `MAP_NORESERVE` overlap regression coverage, C# NativeAOT SDK availability, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
-- AI CLI runtime coverage: `/workspace/tmp/ish-arm64-ai-cli-runtime-coverage-20260515-200605.md`
+- npm CLI package runtime coverage: `/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md`
   - Result: 16 / 16 passing on the Alpine npm lane.
-  - Includes unauthenticated install/startup/version/help probes for Claude Code, OpenAI Codex, Pi, GitHub Copilot, OpenCode, Gemini CLI, and community `grok-cli`; Debian AI CLI remains a separate background lane blocked by glibc/libuv thread creation failures.
+  - Includes unauthenticated install/startup/version/help probes for fast-moving npm CLI packages; the Debian/glibc lane remains blocked by thread/libuv thread creation failures.
 - Go Benchmarks Game smoke: `/workspace/tmp/benchmarksgame-go-smoke-20260513-144802.md`
   - Result: 10 / 10 passing
 - Default mixed-mode Java Hello smoke: `/workspace/tmp/java-hello-audit-r5-20260512.log`

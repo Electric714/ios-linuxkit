@@ -10,9 +10,9 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 |---|---:|---|---|
 | Core runtime coverage | **83 / 83 passing** | Fast regression gate for startup, package manager, syscall ABI, ARM64 fixtures, and language smoke rows. | `/workspace/tmp/ish-arm64-runtime-coverage-20260516-211305.md`; [runtime validation](RUNTIME_VALIDATION.md) |
 | CLI corner cases | **27 pass / 2 unsupported / 0 fail** | TUI, DNS/HTTPS, Git clone, Docker diagnostics, ptrace/netlink visibility, Unix tooling. | `/workspace/tmp/ish-arm64-cli-corner-smoke-20260516-223418.md` |
-| AI/agent CLI npm lane | **16 / 16 passing** | Startup/help/version probes for fast-moving agent CLI packages. | `/workspace/tmp/ish-arm64-ai-cli-runtime-coverage-20260515-200605.md` |
+| npm CLI package lane | **16 / 16 passing** | Startup/help/version probes for fast-moving npm CLI packages. | `/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md` |
 | Node/Bun timing | **10 / 10 passing** | Startup/eval/JSON/FS timings for executor work. | `/workspace/tmp/ish-arm64-node-bun-perf-20260515-213520.md` |
-| Bun + PiClaw | Install/start/listen passing | JS workspace install, recursive copies, JSC behavior, HTTP serving. | `/workspace/tmp/piclaw-yolo-run-enotsup-fixed.log` |
+| Bun workspace/server | Install/start/listen passing | JS workspace install, recursive copies, JSC behavior, HTTP serving. | internal workload log |
 | `rcarmo/go-gte` | Convert/test/run passing | Go toolchain, Python model conversion, 128 MB model I/O, FP16/NEON paths. | [GO_GTE_PROGRESS.md](GO_GTE_PROGRESS.md) |
 | Benchmarks Game | 10/10 rows for selected runtimes | Cross-language compile/runtime corpus. | [BENCHMARKSGAME_HARNESS.md](BENCHMARKSGAME_HARNESS.md), [BENCHMARKSGAME_MATRIX.md](BENCHMARKSGAME_MATRIX.md) |
 
@@ -22,7 +22,7 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 |---|---|
 | Core runtime | `make test-arm64-runtime-coverage REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1200` |
 | CLI corner cases | `make test-arm64-cli-corner-smoke ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=240 INSTALL_TIMEOUT_S=1200` |
-| AI/agent CLI | `make test-arm64-ai-cli-npm-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1800` |
+| npm CLI package lane | `make test-arm64-npm-cli-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1800` |
 | Node/Bun timing | `make test-arm64-node-bun-perf ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180` |
 | Benchmarks Game matrix | `tests/arm64/benchmarksgame/generate-matrix.py` |
 
@@ -36,13 +36,13 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 | Diagnostics | `strace` keeps the known `PTRACE_SETOPTIONS` limitation visible; `iproute2` accepts explicit AF_NETLINK-unavailable diagnostics. |
 | Availability | `nushell`, `xonsh`, `tcpdump`, `bind-tools`, `jq`, Linuxbrew rows report package availability rather than failing silently. |
 
-## AI/agent CLI lane
+## npm CLI package lane
 
 | Area | Notes |
 |---|---|
-| Packages | Claude Code, OpenAI Codex, Pi, GitHub Copilot, OpenCode, Gemini CLI, community `grok-cli`, pip-only Mistral Vibe. |
+| Packages | Fast-moving npm/pip CLI packages with unauthenticated startup/help/version paths. |
 | Scope | Unauthenticated install/startup/help/version probes only. |
-| Reason for separate lane | npm and agent packages change too often for the stable runtime gate. |
+| Reason for separate lane | These packages change too often for the stable runtime gate. |
 | Known limit | Debian/glibc lane is still blocked by thread/libuv assertions. |
 
 ## Benchmarks Game rows
@@ -64,7 +64,7 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 
 | Workload | Fixes covered |
 |---|---|
-| Bun/PiClaw | ARM64 memory-fault retry, JSC GC/timer shims, `REV16`, `getdents64` `d_type`. |
+| Bun workspace/server | ARM64 memory-fault retry, JSC GC/timer shims, `REV16`, `getdents64` `d_type`. |
 | go-gte | AdvSIMD `FCVTL`/`FCVTL2`; Go test/run coverage for model I/O. |
 | Python Benchmarks Game | Startup creation of `/dev/shm` for `multiprocessing.SemLock`. |
 | Go Benchmarks Game | `wait4` polling timeout behavior; per-thread `sigaltstack`. |

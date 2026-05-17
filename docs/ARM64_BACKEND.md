@@ -11,7 +11,7 @@ CLI tools** directly on iPhone and iPad.
 
 > ## 🚢 Production Use
 >
-> This engine is shipping in **[OpenMinis](https://openminis.app)** as the **Agent Shell Sandbox**,
+> This engine is shipping in **[OpenMinis](https://openminis.app)** as the **shell sandbox**,
 > where it has been **stably used by over 10,000 users** to run Linux tools and shell workloads
 > on iOS. The numbers and stability claims in this document are grounded in that real-world
 > deployment, not just synthetic benchmarks.
@@ -63,7 +63,7 @@ fundamental limits:
 |  +--------------------------------------------------------+  |
 |                                                              |
 |  +-------------------+    +-------------------------------+  |
-|  |  Linux Kernel     |    |  Agent Integration            |  |
+|  |  Linux Kernel     |    |  Host Integration            |  |
 |  |  (syscalls,       |    |  - ISHShellExecutor           |  |
 |  |   signals,        |    |  - DebugServer (JSON-RPC)     |  |
 |  |   futex, epoll)   |    |  - Native Offload             |  |
@@ -133,9 +133,9 @@ Running Node.js on a userspace emulator required solving multiple V8-specific pr
 
 **Result**: `npm install`, `npm exec`, `npx`, and `create-next-app` all work.
 
-### 4. Agent Integration
+### 4. Host integration
 
-Mechanisms designed for AI agent orchestration on iOS:
+Mechanisms for embedding the Linux guest in an iOS host app:
 
 #### ISHShellExecutor (`app/ISHShellExecutor.h`)
 
@@ -190,7 +190,7 @@ Mount host directories into the guest filesystem:
 fakefs_bind_mount("/host/path/to/data", "/mnt/data", /*read_only=*/true);
 ```
 
-Enables AI agents to share files between the host app and the Linux guest without copying.
+Lets host-app code share files with the Linux guest without copying.
 
 ### 5. Rootfs Management
 
@@ -307,9 +307,9 @@ to debug, not as cases to skip.
 Current Linux-host status from this pass:
 
 - Latest staged run: **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260516-211305.md`, `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=1200`).
-- Latest Alpine npm AI CLI run: **16 / 16 passing** (`/workspace/tmp/ish-arm64-ai-cli-runtime-coverage-20260515-200605.md`, unauthenticated install/startup/version/help probes, including community `grok-cli`).
+- Latest Alpine npm CLI package run: **16 / 16 passing** (`/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md`, unauthenticated install/startup/version/help probes).
 - Production package baseline: [ARM64_PRODUCTION_BASELINE.md](ARM64_PRODUCTION_BASELINE.md) (`alpine-arm64-fakefs` on Alpine 3.23.4 with OpenJDK 21.0.10_p7-r0; current `master` after tagged validation point `arm64-openjdk21-prod-20260513-r6`; `origin` is configured for `rcarmo/ios-linuxkit`).
-- Non-trivial workload probes are grouped in [ARM64_WORKLOAD_SMOKE_TESTS.md](ARM64_WORKLOAD_SMOKE_TESTS.md): Bun/PiClaw, `rcarmo/go-gte`, and the Benchmarks Game rows.
+- Non-trivial workload probes are grouped in [ARM64_WORKLOAD_SMOKE_TESTS.md](ARM64_WORKLOAD_SMOKE_TESTS.md): Bun workspace/server, `rcarmo/go-gte`, and the Benchmarks Game rows.
 - C coverage is green: `gcc --version`, compile, and execute all pass.
 - SysV IPC coverage is green: shared memory and message queues work across `fork()`.
 - High-value syscall gap and socket ABI coverage is green: `signalfd4`, scheduler priority calls, SysV semaphores, POSIX mqueues, `memfd_create`, `openat2`, `faccessat2`, `fchmodat2(AT_EMPTY_PATH)`, `preadv2`, `pwritev2`, `process_vm_*`, UDP `sendto`/`recvfrom`, TCP `listen`/`accept`, socketpair `sendmsg`/`recvmsg` with `SCM_RIGHTS`, `getsockname`, `setsockopt`, and `getsockopt` pass in the staged C fixture.
@@ -325,7 +325,7 @@ Current Linux-host status from this pass:
   install allocator/free-list crash has been regression-tested with 50
   consecutive `RC:0` runs, and `bun -e "console.log(1)"` passed 20 consecutive
   repro runs after the GC shims. `setTimeout`, a minimal `Bun.serve` server,
-  and a PiClaw YOLO direct install/web startup smoke also passed.
+  and a Bun workspace web-startup smoke also passed.
 - Node/npm coverage is green: `node --version`, `node -e`, `npm --version`, and
   `npm run` pass without the previous noisy `pwritev` stubs.
 - Python and Lua smoke coverage is green: `python3 --version`, Python eval,
@@ -353,7 +353,7 @@ Current Linux-host status from this pass:
   high mappings; silently relocating these reservations into low memory corrupts
   allocator metadata.
 - Large anonymous `MAP_NORESERVE` arenas are now placed in the high 48-bit address space first, instead of burning the low 4GB mmap window. This removes Bun/JSC startup `ENOMEM` on repeated 1-8GB arena probes.
-- High-address lazy reservations are now visible to high-hole allocation, caller-hint rejection, and alignment checks. This prevents later medium Bun/JSC mappings from overlapping an existing `MAP_NORESERVE` reservation and is covered by the staged runtime gate plus the 16/16 Alpine npm AI CLI smoke lane.
+- High-address lazy reservations are now visible to high-hole allocation, caller-hint rejection, and alignment checks. This prevents later medium Bun/JSC mappings from overlapping an existing `MAP_NORESERVE` reservation and is covered by the staged runtime gate plus the 16/16 Alpine npm CLI package lane.
 - ARM64 `fchmodat2` syscall 452 is wired and covered, including `AT_EMPTY_PATH` on both an open fd and `AT_FDCWD`/current directory.
 - Fixed the pair-exclusive `STXP/STLXP` gadget clobbering `_pc` (`x28`) while
   loading the expected high word. The standalone `tests/arm64/atomics/ldxp-stlxp.c` now covers both 64-bit and 32-bit pair exclusives and passes.
@@ -398,7 +398,7 @@ Current Linux-host status from this pass:
   wired to `rt_sigreturn`.
 - Fixed `getdents64` `d_type` reporting for realfs/fakefs/tmpfs/proc/devpts. Bun
   `fs.cpSync(..., {recursive:true})` uses directory-entry types while walking
-  trees; returning `DT_UNKNOWN` caused PiClaw's bootstrap copy of `.pi/skills`
+  trees; returning `DT_UNKNOWN` caused a Bun workspace bootstrap copy
   to try `copyfile` on subdirectories and fail with `ENOTSUP`.
 
 Immediate plan:
@@ -510,7 +510,7 @@ Major milestones:
 4. **Node.js support**: V8 guard pages, MAP_NORESERVE, binary patch, exit cleanup
 5. **Go support**: Signal frame alignment, per-thread `sigaltstack`, sigreturn fixes, NZCV preservation
 6. **Rust/uv support**: FUTEX_WAIT_BITSET, PMULL, BFM, demand-mapped reads
-7. **Agent integration**: ISHShellExecutor, DebugServer, Native Offload, Bind Mounts
+7. **Host integration**: ISHShellExecutor, DebugServer, Native Offload, Bind Mounts
 8. **Stability**: 50+ bug fixes for concurrency, memory leaks, use-after-free, deadlocks
 
 ---

@@ -24,7 +24,7 @@
 > - **Node.js 22 / npm / npx** — V8 guard pages, binary patch, `--jitless` injection
 > - **Go and Rust** — large VA reservations, signal frame alignment, FUTEX_WAIT_BITSET, PMULL
 > - **Full NEON + Crypto** — AES/SHA/CRC32 instructions for TLS and hashing at native-ish speed
-> - **Agent integration** — `ISHShellExecutor` (Obj-C shell API), `DebugServer` (JSON-RPC over HTTP),
+> - **Host integration** — `ISHShellExecutor` (Obj-C shell API), `DebugServer` (JSON-RPC over HTTP),
 >   `Native Offload` (bypass emulation for selected binaries), bind mounts for host↔guest file sharing
 > - **Runtime coverage harness** — Linux-host `make test-arm64-runtime-coverage` gate for shell/C/Go/Bun/Node/npm bring-up
 > - **iOS-first rootfs** — Alpine 3.21 aarch64 with full `apk` ecosystem and versioned overlay patching

@@ -14,7 +14,7 @@ DEBIAN_SUITE ?= trixie
 NODE_VERSION ?= 24.14.1
 BUN_VERSION ?= 1.3.13
 ROOTFS_LANES ?= alpine=$(ROOTFS_DIR) debian=$(DEBIAN_ROOTFS_DIR)
-AI_CLI_PACKAGE_MANAGERS ?= npm bun pip
+CLI_PACKAGE_MANAGERS ?= npm bun pip
 REPORT_DIR ?= /workspace/tmp
 TIMEOUT_S ?= 120
 INSTALL_TIMEOUT_S ?= 1200
@@ -32,14 +32,14 @@ help:
 	@echo "                                      Run opt-in ARM64 internal-continue first-call-site fixtures"
 	@echo "  make test-arm64-cli-corner-smoke   Run optional CLI/TUI/network/container corner-case smoke tests"
 	@echo "  make debian-arm64-fakefs           Build minimal Debian ARM64 fakefs lane"
-	@echo "  make test-arm64-ai-cli-runtime-coverage"
-	@echo "                                      Run second-stage AI CLI npm/Bun/pip install/startup coverage"
-	@echo "  make test-arm64-ai-cli-npm-runtime-coverage"
-	@echo "                                      Run npm-only AI CLI coverage across ROOTFS_LANES"
-	@echo "  make test-arm64-ai-cli-runtime-coverage-debug"
-	@echo "                                      Run AI CLI coverage against debug binary"
+	@echo "  make test-arm64-npm-cli-runtime-coverage"
+	@echo "                                      Run npm-only CLI package coverage across ROOTFS_LANES"
+	@echo "  make test-arm64-cli-package-runtime-coverage"
+	@echo "                                      Run second-stage npm/Bun/pip CLI package coverage"
+	@echo "  make test-arm64-cli-package-runtime-coverage-debug"
+	@echo "                                      Run CLI package coverage against debug binary"
 	@echo ""
-	@echo "Knobs: ROOTFS_DIR=$(ROOTFS_DIR) DEBIAN_ROOTFS_DIR=$(DEBIAN_ROOTFS_DIR) ROOTFS_LANES=$(ROOTFS_LANES) AI_CLI_PACKAGE_MANAGERS=$(AI_CLI_PACKAGE_MANAGERS) REPORT_DIR=$(REPORT_DIR) TIMEOUT_S=$(TIMEOUT_S) INSTALL_TIMEOUT_S=$(INSTALL_TIMEOUT_S)"
+	@echo "Knobs: ROOTFS_DIR=$(ROOTFS_DIR) DEBIAN_ROOTFS_DIR=$(DEBIAN_ROOTFS_DIR) ROOTFS_LANES=$(ROOTFS_LANES) CLI_PACKAGE_MANAGERS=$(CLI_PACKAGE_MANAGERS) REPORT_DIR=$(REPORT_DIR) TIMEOUT_S=$(TIMEOUT_S) INSTALL_TIMEOUT_S=$(INSTALL_TIMEOUT_S)"
 
 .PHONY: build-arm64-linux
 build-arm64-linux:
@@ -131,35 +131,35 @@ test-arm64-cli-corner-smoke: build-arm64-linux
 	INSTALL_TIMEOUT_S="$(INSTALL_TIMEOUT_S)" \
 	./tests/arm64/cli-corner-smoke.sh
 
-.PHONY: test-arm64-ai-cli-runtime-coverage
-test-arm64-ai-cli-runtime-coverage: build-arm64-linux $(DEBIAN_ROOTFS_DIR)
+.PHONY: test-arm64-cli-package-runtime-coverage
+test-arm64-cli-package-runtime-coverage: build-arm64-linux $(DEBIAN_ROOTFS_DIR)
 	ISH_BIN="$(CURDIR)/$(RELEASE_BUILD_DIR)/ish" \
 	ROOTFS="$(ROOTFS_DIR)" \
 	ROOTFS_LANES="$(ROOTFS_LANES)" \
-	AI_CLI_PACKAGE_MANAGERS="$(AI_CLI_PACKAGE_MANAGERS)" \
+	CLI_PACKAGE_MANAGERS="$(CLI_PACKAGE_MANAGERS)" \
 	REPORT_DIR="$(REPORT_DIR)" \
 	TIMEOUT_S="$(TIMEOUT_S)" \
 	INSTALL_TIMEOUT_S="$(INSTALL_TIMEOUT_S)" \
-	./tests/arm64/ai-cli-runtime-coverage.sh
+	./tests/arm64/cli-package-runtime-coverage.sh
 
-.PHONY: test-arm64-ai-cli-npm-runtime-coverage
-test-arm64-ai-cli-npm-runtime-coverage: build-arm64-linux $(DEBIAN_ROOTFS_DIR)
+.PHONY: test-arm64-npm-cli-runtime-coverage
+test-arm64-npm-cli-runtime-coverage: build-arm64-linux $(DEBIAN_ROOTFS_DIR)
 	ISH_BIN="$(CURDIR)/$(RELEASE_BUILD_DIR)/ish" \
 	ROOTFS="$(ROOTFS_DIR)" \
 	ROOTFS_LANES="$(ROOTFS_LANES)" \
-	AI_CLI_PACKAGE_MANAGERS="npm" \
+	CLI_PACKAGE_MANAGERS="npm" \
 	REPORT_DIR="$(REPORT_DIR)" \
 	TIMEOUT_S="$(TIMEOUT_S)" \
 	INSTALL_TIMEOUT_S="$(INSTALL_TIMEOUT_S)" \
-	./tests/arm64/ai-cli-runtime-coverage.sh
+	./tests/arm64/cli-package-runtime-coverage.sh
 
-.PHONY: test-arm64-ai-cli-runtime-coverage-debug
-test-arm64-ai-cli-runtime-coverage-debug: build-arm64-linux-debug $(DEBIAN_ROOTFS_DIR)
+.PHONY: test-arm64-cli-package-runtime-coverage-debug
+test-arm64-cli-package-runtime-coverage-debug: build-arm64-linux-debug $(DEBIAN_ROOTFS_DIR)
 	ISH_BIN="$(CURDIR)/$(DEBUG_BUILD_DIR)/ish" \
 	ROOTFS="$(ROOTFS_DIR)" \
 	ROOTFS_LANES="$(ROOTFS_LANES)" \
-	AI_CLI_PACKAGE_MANAGERS="$(AI_CLI_PACKAGE_MANAGERS)" \
+	CLI_PACKAGE_MANAGERS="$(CLI_PACKAGE_MANAGERS)" \
 	REPORT_DIR="$(REPORT_DIR)" \
 	TIMEOUT_S="$(TIMEOUT_S)" \
 	INSTALL_TIMEOUT_S="$(INSTALL_TIMEOUT_S)" \
-	./tests/arm64/ai-cli-runtime-coverage.sh
+	./tests/arm64/cli-package-runtime-coverage.sh

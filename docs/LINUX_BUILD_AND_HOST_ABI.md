@@ -239,7 +239,7 @@ Linux `getdents64` exposes a `d_type` byte for each directory entry. The ARM64
 port previously returned `DT_UNKNOWN` for every entry even when the backing
 filesystem knew the type. That is legal but incomplete, and it breaks runtimes
 that use `d_type` as a fast path for recursive directory walks. Bun's
-`fs.cpSync(..., { recursive: true })` hit this during PiClaw workspace bootstrap:
+`fs.cpSync(..., { recursive: true })` hit this during a Bun workspace bootstrap:
 it treated subdirectories under `skel/.pi/skills` as ordinary copy targets and
 failed with:
 
@@ -255,7 +255,7 @@ Directory reads now propagate or infer Linux `DT_*` values:
 - fakefs inherits the realfs type while substituting its fake inode number.
 
 Validation: a minimal Bun recursive `fs.cpSync` directory tree copy succeeds,
-PiClaw no longer logs the bootstrap `ENOTSUP ... copyfile` warning, and staged
+the workspace bootstrap no longer logs the `ENOTSUP ... copyfile` warning, and staged
 runtime coverage remains **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260516-211305.md`), with the later `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall, C# NativeAOT SDK-availability, and high-address `MAP_NORESERVE` reservation-overlap probes included in the staged gate.
 
 ## Blocking I/O and exit cleanup
