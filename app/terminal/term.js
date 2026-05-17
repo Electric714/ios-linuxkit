@@ -191,6 +191,10 @@ function installBridgeExports() {
 }
 
 function installFocusBridge() {
+    terminalElement.addEventListener('touchstart', (event) => {
+        if (!term.hasSelection())
+            event.preventDefault();
+    }, {capture: true});
     terminalElement.addEventListener('touchend', (event) => {
         if (term.hasSelection())
             return;
@@ -199,9 +203,10 @@ function installFocusBridge() {
         native.focus();
     }, {capture: true});
     terminalElement.addEventListener('mousedown', (event) => {
+        event.preventDefault();
         if (!term.hasSelection())
             native.focus();
-    });
+    }, {capture: true});
     terminalElement.addEventListener('focus', () => native.syncFocus());
     terminalElement.addEventListener('blur', () => native.syncFocus());
 }
@@ -211,11 +216,16 @@ function disableWebTextInput() {
     // WebView's hidden textarea become the keyboard owner, or native input
     // stops reaching the pty.
     terminalElement.removeAttribute('contenteditable');
+    terminalElement.removeAttribute('role');
+    terminalElement.removeAttribute('aria-label');
+    terminalElement.removeAttribute('aria-multiline');
     terminalElement.setAttribute('tabindex', '-1');
     if (term.textarea) {
         term.textarea.readOnly = true;
         term.textarea.setAttribute('tabindex', '-1');
         term.textarea.style.pointerEvents = 'none';
+        term.textarea.style.webkitUserSelect = 'none';
+        term.textarea.style.userSelect = 'none';
         term.textarea.blur();
     }
 }

@@ -22,8 +22,9 @@ body {
     background: transparent;
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: text;
-    user-select: text;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #terminal {
@@ -41,10 +42,16 @@ body {
     contain: strict;
     transform: translateZ(0);
     will-change: transform;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #terminal canvas {
     display: block;
     transform: translateZ(0);
     will-change: transform;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
