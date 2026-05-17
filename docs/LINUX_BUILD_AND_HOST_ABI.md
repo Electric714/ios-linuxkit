@@ -5,6 +5,20 @@
 Make the ARM64 guest build usable on a Linux AArch64 host without scattering
 Darwin-only assumptions through the runtime.
 
+## Validation host
+
+| Component | Detail |
+|---|---|
+| Board | Orange Pi 6 Plus |
+| SoC | CIX P1 (CD8180/CD8160), ARMv8 AArch64 |
+| CPU topology | 12 cores: 4× Cortex-A520 up to 1.8 GHz, 8× Cortex-A720 up to 2.6 GHz |
+| RAM | 16 GB class; about 14 GiB visible to Linux |
+| Primary storage | AirDisk 512 GB NVMe; root on `/dev/nvme0n1p2`, swap on `/dev/nvme0n1p3` |
+| Network | Primary wired interface `enP1p49s0`; Wi-Fi device present as `wlP2p1s0` |
+| OS/kernel | Orange Pi 1.0.2 Trixie / Debian Trixie, Linux `6.6.89-cix`, `aarch64` |
+| Toolchain | Clang 19.1.7, Meson 1.7.0, Ninja 1.12.1, GNU Make 4.4.1 |
+| Workspace | `/workspace/projects/ish-arm64` |
+
 ## Current Linux build
 
 Verified on this host with:

@@ -28,6 +28,20 @@ The terminal app in this repository is a reference shell. The reusable parts are
 
 See [runtime validation](docs/RUNTIME_VALIDATION.md) for commands, reports, and failure rules. See [workload smoke tests](docs/ARM64_WORKLOAD_SMOKE_TESTS.md) for heavier workload coverage.
 
+## Validation host
+
+The current Linux-host reports were produced on this board:
+
+| Component | Detail |
+|---|---|
+| Board | Orange Pi 6 Plus |
+| SoC | CIX P1 (CD8180/CD8160), ARMv8 AArch64 |
+| CPU | 12 cores: 4× Cortex-A520 up to 1.8 GHz, 8× Cortex-A720 up to 2.6 GHz |
+| RAM | 16 GB class; about 14 GiB visible to Linux |
+| Storage | AirDisk 512 GB NVMe; root on `/dev/nvme0n1p2`, swap on `/dev/nvme0n1p3` |
+| OS/kernel | Orange Pi 1.0.2 Trixie / Debian Trixie, Linux `6.6.89-cix`, `aarch64` |
+| Toolchain | Clang 19.1.7, Meson 1.7.0, Ninja 1.12.1, GNU Make 4.4.1 |
+
 ## Testing workflows
 
 | Workflow | Command |

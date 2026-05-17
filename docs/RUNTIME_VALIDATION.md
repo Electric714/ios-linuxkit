@@ -10,6 +10,9 @@ This file describes the validation gates used before advertising a runtime chang
 | Core result | **83 / 83 passing** |
 | Binary | `build-arm64-linux/ish` |
 | Rootfs | `alpine-arm64-fakefs` |
+| Validation host | Orange Pi 6 Plus, CIX P1 (CD8180/CD8160), 12-core AArch64 |
+| Host OS/kernel | Orange Pi 1.0.2 Trixie / Debian Trixie, Linux `6.6.89-cix` |
+| Host toolchain | Clang 19.1.7, Meson 1.7.0, Ninja 1.12.1, GNU Make 4.4.1 |
 | Timeouts | `TIMEOUT_S=180`, `INSTALL_TIMEOUT_S=1200` |
 | Required diagnostics | `SAFETY-VALVE=0`, `NETDIAG=0` in clean core logs |
 

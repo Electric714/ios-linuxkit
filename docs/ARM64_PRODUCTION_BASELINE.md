@@ -12,12 +12,17 @@ Reviewed: 2026-05-16
 
 ## Host used for validation
 
-- Board: Orange Pi 6 Plus
-- SoC: CIX P1 (CD8180/CD8160), 12 CPU cores
-- RAM: 16 GB class (about 14 GiB visible to Linux)
-- Storage: NVMe root (`/dev/nvme0n1p2`)
-- Host OS: Debian Linux (Trixie)
-- Build target: ARM64 Linux iSH (`build-arm64-linux/ish`)
+| Component | Detail |
+|---|---|
+| Board | Orange Pi 6 Plus |
+| SoC | CIX P1 (CD8180/CD8160), ARMv8 AArch64 |
+| CPU topology | 12 cores: 4× Cortex-A520 up to 1.8 GHz, 8× Cortex-A720 up to 2.6 GHz |
+| RAM | 16 GB class; about 14 GiB visible to Linux |
+| Storage | AirDisk 512 GB NVMe; root on `/dev/nvme0n1p2`, swap on `/dev/nvme0n1p3` |
+| Primary LAN | `enP1p49s0` |
+| Host OS/kernel | Orange Pi 1.0.2 Trixie / Debian Trixie, Linux `6.6.89-cix`, `aarch64` |
+| Toolchain | Clang 19.1.7, Meson 1.7.0, Ninja 1.12.1, GNU Make 4.4.1 |
+| Build target | ARM64 Linux iSH (`build-arm64-linux/ish`) |
 
 ## Rootfs/package baseline
 
