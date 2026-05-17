@@ -1,4 +1,4 @@
-import { init, Terminal } from './ghostty-web.js';
+const { init, Terminal } = window.ghosttyWeb;
 
 const terminalElement = document.getElementById('terminal');
 const ansiColorNames = [
@@ -32,11 +32,13 @@ let styleState = {
     cursorShape: 'BLOCK',
 };
 let resizeObserver;
-let pendingFit = false;
+let pendingResizePreview = false;
+let pendingResizeCommitTimeout;
 let pendingScrollSync = false;
 let lastNativeScrollHeight;
 let lastNativeScrollTop;
 let oldProps = {};
+const resizeSettleDelayMs = 120;
 
 // Functions for native -> JS.  Define this immediately so early native calls
 // fail closed instead of throwing while the module/WASM is still loading.
@@ -83,7 +85,7 @@ window.addEventListener('load', async () => {
         if (document.fonts?.ready)
             await document.fonts.ready;
 
-        await init('./ghostty-vt.wasm');
+        await init();
 
         term = new Terminal({
             cols: 80,
@@ -111,6 +113,7 @@ window.addEventListener('load', async () => {
         term.onCursorMove(syncApplicationCursor);
 
         term.open(terminalElement);
+        disableWebTextInput();
         installBridgeExports();
         installFocusBridge();
         installResizeBridge();
@@ -139,10 +142,7 @@ function installBridgeExports() {
     window.exports.copy = () => term.copySelection();
 
     window.exports.setFocused = (focus) => {
-        if (focus)
-            term.focus();
-        else
-            term.blur();
+        terminalElement.classList.toggle('terminal-focused', !!focus);
     };
 
     window.exports.scrollToBottom = () => {
@@ -191,14 +191,33 @@ function installBridgeExports() {
 }
 
 function installFocusBridge() {
-    terminalElement.addEventListener('mousedown', (event) => {
+    terminalElement.addEventListener('touchend', (event) => {
         if (term.hasSelection())
             return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
         native.focus();
+    }, {capture: true});
+    terminalElement.addEventListener('mousedown', (event) => {
+        if (!term.hasSelection())
+            native.focus();
     });
-    terminalElement.addEventListener('touchend', () => native.focus());
     terminalElement.addEventListener('focus', () => native.syncFocus());
     terminalElement.addEventListener('blur', () => native.syncFocus());
+}
+
+function disableWebTextInput() {
+    // iOS text entry is handled by TerminalView.insertText:.  Do not let the
+    // WebView's hidden textarea become the keyboard owner, or native input
+    // stops reaching the pty.
+    terminalElement.removeAttribute('contenteditable');
+    terminalElement.setAttribute('tabindex', '-1');
+    if (term.textarea) {
+        term.textarea.readOnly = true;
+        term.textarea.setAttribute('tabindex', '-1');
+        term.textarea.style.pointerEvents = 'none';
+        term.textarea.blur();
+    }
 }
 
 function installResizeBridge() {
@@ -208,13 +227,40 @@ function installResizeBridge() {
 }
 
 function scheduleFit() {
-    if (pendingFit)
+    requestResizePreview();
+    clearTimeout(pendingResizeCommitTimeout);
+    pendingResizeCommitTimeout = setTimeout(fitTerminal, resizeSettleDelayMs);
+}
+
+function requestResizePreview() {
+    if (pendingResizePreview)
         return;
-    pendingFit = true;
+    pendingResizePreview = true;
     requestAnimationFrame(() => {
-        pendingFit = false;
-        fitTerminal();
+        pendingResizePreview = false;
+        previewTerminalSize();
     });
+}
+
+function previewTerminalSize() {
+    if (!term?.renderer || !terminalElement)
+        return;
+
+    const canvas = term.renderer.getCanvas?.() || term.canvas;
+    if (!canvas)
+        return;
+
+    const currentWidth = canvas.offsetWidth;
+    const currentHeight = canvas.offsetHeight;
+    const nextWidth = terminalElement.clientWidth;
+    const nextHeight = terminalElement.clientHeight;
+    if (currentWidth <= 0 || currentHeight <= 0 || nextWidth <= 0 || nextHeight <= 0)
+        return;
+
+    const scaleX = nextWidth / currentWidth;
+    const scaleY = nextHeight / currentHeight;
+    canvas.style.transformOrigin = 'top left';
+    canvas.style.transform = `translateZ(0) scale(${scaleX}, ${scaleY})`;
 }
 
 function fitTerminal() {
@@ -230,13 +276,17 @@ function fitTerminal() {
     if (width <= 0 || height <= 0)
         return;
 
+    const canvas = term.renderer.getCanvas?.() || term.canvas;
+    if (canvas)
+        canvas.style.transform = 'translateZ(0)';
+
     const cols = Math.max(2, Math.floor(width / metrics.width));
     const rows = Math.max(1, Math.floor(height / metrics.height));
-    if (cols != term.cols || rows != term.rows)
+    if (cols != term.cols || rows != term.rows) {
         term.resize(cols, rows);
-
-    native.resize();
-    scheduleScrollSync();
+        native.resize();
+        scheduleScrollSync();
+    }
 }
 
 function scheduleScrollSync() {

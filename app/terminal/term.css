@@ -38,8 +38,13 @@ body {
     text-rendering: optimizeLegibility;
     font-variant-ligatures: normal;
     -webkit-font-smoothing: antialiased;
+    contain: strict;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 #terminal canvas {
     display: block;
+    transform: translateZ(0);
+    will-change: transform;
 }

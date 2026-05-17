@@ -3,9 +3,12 @@ Commit: f82a69cf82d54aeaba35d2a4165a58e33bbb93c2
 Version: 0.8.2
 
 Vendored files:
-- ghostty-web.js: ESM browser bundle used by app/terminal/term.js
-- ghostty-vt.wasm: upstream Ghostty VT WebAssembly module fallback
+- ghostty-web.js: browser bundle used by app/terminal/term.js
+- ghostty-vt.wasm: upstream Ghostty VT WebAssembly module
 
-The JS bundle embeds the WASM as a data: URL fallback, but the standalone WASM
-is also bundled so WKWebView can load ./ghostty-vt.wasm if data: fetches are
-restricted on a specific iOS/WebKit release.
+Local iOS patch:
+- The upstream ESM export is rewritten to expose window.ghosttyWeb, because
+  WKWebView fails to load local file:// module scripts on tested iPad builds.
+- app/terminal/term.js calls init() without a path so ghostty-web uses its
+  embedded data: URL WASM. WKWebView rejects fetch() for the standalone local
+  file:// ghostty-vt.wasm in this app bundle.

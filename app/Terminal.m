@@ -110,12 +110,11 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
         _webView = [[CustomWebView alloc] initWithFrame:webviewSize configuration:config];
         if (@available(macOS 13.3, iOS 16.4, tvOS 16.4, *))
             _webView.inspectable = YES;
+        _webView.layer.drawsAsynchronously = YES;
         _webView.scrollView.scrollEnabled = NO;
         NSURL *xtermHtmlFile = [NSBundle.mainBundle URLForResource:@"term" withExtension:@"html"];
-        // The ghostty-web terminal frontend is loaded as an ES module with
-        // bundled WASM/data-url fallbacks. Give WebKit access to the containing
-        // bundle directory rather than only the HTML file so local module
-        // imports continue to work when loaded from app resources.
+        // Give WebKit access to the containing bundle directory so the
+        // terminal frontend can load adjacent classic scripts and assets.
         [_webView loadFileURL:xtermHtmlFile allowingReadAccessToURL:xtermHtmlFile.URLByDeletingLastPathComponent];
     }
     return _webView;
