@@ -4,6 +4,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
@@ -52,7 +53,7 @@ __attribute__((weak)) void *mem_ptr(struct mem *mem, addr_t addr, int type) {
 #endif
 
 #ifdef GUEST_ARM64
-static bool arm64_block_stats_enabled;
+bool arm64_block_stats_enabled;
 static bool arm64_block_stats_dumped;
 static bool arm64_eager_prechain_enabled;
 static bool arm64_eager_prechain_incoming_enabled;
@@ -70,6 +71,12 @@ static _Atomic uint64_t arm64_block_stats_chain_patch_slot0;
 static _Atomic uint64_t arm64_block_stats_chain_patch_slot1;
 static _Atomic uint64_t arm64_block_stats_chain_patch_same_page;
 static _Atomic uint64_t arm64_block_stats_chain_patch_cross_page;
+static _Atomic uint64_t arm64_block_stats_chain_entries;
+static _Atomic uint64_t arm64_block_stats_chain_entry_slot0;
+static _Atomic uint64_t arm64_block_stats_chain_entry_slot1;
+static _Atomic uint64_t arm64_block_stats_chain_entry_unknown_slot;
+static _Atomic uint64_t arm64_block_stats_chain_entry_same_page;
+static _Atomic uint64_t arm64_block_stats_chain_entry_cross_page;
 static _Atomic uint64_t arm64_block_stats_prechain_attempts;
 static _Atomic uint64_t arm64_block_stats_prechain_patches;
 static _Atomic uint64_t arm64_block_stats_prechain_outgoing_attempts;
@@ -98,7 +105,7 @@ void arm64_block_stats_dump_if_enabled(void) {
         return;
     arm64_block_stats_dumped = true;
     fprintf(stderr,
-            "ARM64_BLOCK_STATS entries=%llu cache_hits=%llu cache_misses=%llu compiled=%llu code_words=%llu guest_bytes=%llu jump0=%llu jump1=%llu chain_attempts=%llu chain_patches=%llu chain_patch_slot0=%llu chain_patch_slot1=%llu chain_patch_same_page=%llu chain_patch_cross_page=%llu prechain_attempts=%llu prechain_patches=%llu prechain_outgoing_attempts=%llu prechain_outgoing_patches=%llu prechain_incoming_attempts=%llu prechain_incoming_patches=%llu\n",
+            "ARM64_BLOCK_STATS entries=%llu cache_hits=%llu cache_misses=%llu compiled=%llu code_words=%llu guest_bytes=%llu jump0=%llu jump1=%llu chain_attempts=%llu chain_patches=%llu chain_patch_slot0=%llu chain_patch_slot1=%llu chain_patch_same_page=%llu chain_patch_cross_page=%llu chain_entries=%llu chain_entry_slot0=%llu chain_entry_slot1=%llu chain_entry_unknown_slot=%llu chain_entry_same_page=%llu chain_entry_cross_page=%llu prechain_attempts=%llu prechain_patches=%llu prechain_outgoing_attempts=%llu prechain_outgoing_patches=%llu prechain_incoming_attempts=%llu prechain_incoming_patches=%llu\n",
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_entries, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_cache_hits, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_cache_misses, memory_order_relaxed),
@@ -113,6 +120,12 @@ void arm64_block_stats_dump_if_enabled(void) {
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_patch_slot1, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_patch_same_page, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_patch_cross_page, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entries, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entry_slot0, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entry_slot1, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entry_unknown_slot, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entry_same_page, memory_order_relaxed),
+            (unsigned long long)atomic_load_explicit(&arm64_block_stats_chain_entry_cross_page, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_prechain_attempts, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_prechain_patches, memory_order_relaxed),
             (unsigned long long)atomic_load_explicit(&arm64_block_stats_prechain_outgoing_attempts, memory_order_relaxed),
@@ -130,6 +143,31 @@ void arm64_block_stats_dump_if_enabled(void) {
     if (arm64_block_stats_enabled) \
         atomic_fetch_add_explicit(&(counter), (uint64_t)(value), memory_order_relaxed); \
 } while (0)
+
+void arm64_block_stats_count_chained_entry(struct fiber_block *from, unsigned long to_code) {
+    if (!arm64_block_stats_enabled || from == NULL)
+        return;
+
+    struct fiber_block *to = (struct fiber_block *)((char *)to_code - offsetof(struct fiber_block, code));
+    atomic_fetch_add_explicit(&arm64_block_stats_chain_entries, 1, memory_order_relaxed);
+    if (PAGE(from->addr) == PAGE(to->addr))
+        atomic_fetch_add_explicit(&arm64_block_stats_chain_entry_same_page, 1, memory_order_relaxed);
+    else
+        atomic_fetch_add_explicit(&arm64_block_stats_chain_entry_cross_page, 1, memory_order_relaxed);
+
+    bool matched_slot = false;
+    for (int i = 0; i <= 1; i++) {
+        if (from->jump_ip[i] != NULL && *from->jump_ip[i] == to_code) {
+            if (i == 0)
+                atomic_fetch_add_explicit(&arm64_block_stats_chain_entry_slot0, 1, memory_order_relaxed);
+            else
+                atomic_fetch_add_explicit(&arm64_block_stats_chain_entry_slot1, 1, memory_order_relaxed);
+            matched_slot = true;
+        }
+    }
+    if (!matched_slot)
+        atomic_fetch_add_explicit(&arm64_block_stats_chain_entry_unknown_slot, 1, memory_order_relaxed);
+}
 #else
 #define ARM64_BLOCK_STAT_INC(counter) do {} while (0)
 #define ARM64_BLOCK_STAT_ADD(counter, value) do {} while (0)

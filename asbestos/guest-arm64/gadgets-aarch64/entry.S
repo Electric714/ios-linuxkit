@@ -95,6 +95,18 @@ fiber_ret_chain:
     ldr x9, [x9, #16]                       // mmu->changes (uint64_t, at offset 16)
     cmp w8, w9                              // compare as 32-bit (mem_changes is unsigned)
     b.ne poke                               // if changed, return to main loop for flush
+    // Optional block-stats probe for chained block-entry execution. This is
+    // measurement-only and runs only when ISH_ARM64_BLOCK_STATS is enabled.
+    adrp x8, :got:NAME(arm64_block_stats_enabled)
+    ldr x8, [x8, :got_lo12:NAME(arm64_block_stats_enabled)]
+    ldrb w8, [x8]
+    cbz w8, 1f
+    save_c
+    ldr x0, [_cpu, #LOCAL_last_block]
+    mov x1, _pc
+    bl NAME(arm64_block_stats_count_chained_entry)
+    restore_c
+1:
     // Record last_block for block chaining in main loop
     sub x8, _pc, #FIBER_BLOCK_code
     str x8, [_cpu, #LOCAL_last_block]

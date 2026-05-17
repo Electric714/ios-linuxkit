@@ -431,6 +431,14 @@ Only after superblocks are stable:
 - add guarded exits back to normal blocks;
 - enforce invalidation epochs so traces die on guest code writes.
 
+Phase 4 reconnaissance counter tranche:
+
+- Extended `ISH_ARM64_BLOCK_STATS=1` with chained-entry execution counters from the normal `fiber_ret_chain` fast path: `chain_entries`, `chain_entry_slot0`, `chain_entry_slot1`, `chain_entry_unknown_slot`, `chain_entry_same_page`, and `chain_entry_cross_page`. These count runtime transitions that stay inside chained gadget execution, complementing the older main-loop `entries`, compile, and chain-patch counters.
+- Scope remains measurement-only: no trace builder, no guarded exits, no invalidation epoch changes, and no new superblock behavior. The stats probe is gated by the existing block-stats flag and default runs remain stats-silent.
+- Focused smoke: default `/workspace/tmp/arm64-blockstats-default-20260517-071536.log` stayed silent; stats-enabled `/workspace/tmp/arm64-blockstats-enabled-20260517-071536.log` emitted non-zero chained-entry fields.
+- Node/Bun validation: default `/workspace/tmp/ish-arm64-node-bun-perf-20260517-071603.md` and block-stats `/workspace/tmp/ish-arm64-node-bun-perf-20260517-071650.md` were both **10 / 10 passing**. Aggregated block-stats totals from the stats run: `entries=13238844`, `chain_entries=12493903`, `chain_entry_slot0=5885466`, `chain_entry_slot1=6608436`, `chain_entry_unknown_slot=1`, `chain_entry_same_page=12452595`, and `chain_entry_cross_page=41308`. This shows most observed chained executions stay same-page, and slot 1/fallthrough-style chains are slightly hotter in the Node/Bun table.
+- Runtime validation: default full Alpine runtime coverage `/workspace/tmp/ish-arm64-runtime-coverage-20260517-071802.md` was **83 / 83 passing**. Keep `ISH_ARM64_BLOCK_STATS=1` out of exact-output runtime coverage gates for the same reason as fusion stats: diagnostics intentionally write extra lines.
+
 ## Validation gates
 
 For each implementation tranche:
