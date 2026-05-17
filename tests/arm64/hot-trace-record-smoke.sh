@@ -91,7 +91,7 @@ run_lane() {
     ROOTFS="$2"
     [ -d "$ROOTFS" ] || { echo "missing rootfs for lane $LANE_NAME: $ROOTFS" >&2; return 1; }
 
-    local out value created retired attempts live retire_page retire_source retire_target
+    local out value created retired attempts live retire_page retire_source retire_target guard_checks guard_passes
 
     out="$HOST_TMP/${LANE_NAME}-default.out"
     if guest_capture "$out" "" "node -e 'console.log(2+2)'" && has_clean_status "$out" && assert_no_arm64_stats "$out"; then
@@ -112,10 +112,11 @@ run_lane() {
         value="$(stat_field "$out" hot_trace_enabled || true)"
         attempts="$(stat_field "$out" hot_trace_record_create_attempts || true)"
         created="$(stat_field "$out" hot_trace_record_created || true)"
-        if [ "$value" = 0 ] && [ "$attempts" = 0 ] && [ "$created" = 0 ]; then
-            record_result counters stats-only-zero PASS "hot_trace_enabled=$value hot_trace_record_create_attempts=$attempts hot_trace_record_created=$created"
+        guard_checks="$(stat_field "$out" hot_trace_record_guard_checks || true)"
+        if [ "$value" = 0 ] && [ "$attempts" = 0 ] && [ "$created" = 0 ] && [ "$guard_checks" = 0 ]; then
+            record_result counters stats-only-zero PASS "hot_trace_enabled=$value hot_trace_record_create_attempts=$attempts hot_trace_record_created=$created hot_trace_record_guard_checks=$guard_checks"
         else
-            record_result counters stats-only-zero FAIL "hot_trace_enabled=${value:-missing} hot_trace_record_create_attempts=${attempts:-missing} hot_trace_record_created=${created:-missing}"
+            record_result counters stats-only-zero FAIL "hot_trace_enabled=${value:-missing} hot_trace_record_create_attempts=${attempts:-missing} hot_trace_record_created=${created:-missing} hot_trace_record_guard_checks=${guard_checks:-missing}"
         fi
     else
         record_result counters stats-only-zero FAIL "$(grep -v '^__ISH_STATUS:' "$out" | sed -n '1,16p')"
@@ -131,10 +132,17 @@ run_lane() {
         retire_page="$(stat_field "$out" hot_trace_record_retire_page || true)"
         retire_source="$(stat_field "$out" hot_trace_record_retire_source || true)"
         retire_target="$(stat_field "$out" hot_trace_record_retire_target || true)"
+        guard_checks="$(stat_field "$out" hot_trace_record_guard_checks || true)"
+        guard_passes="$(stat_field "$out" hot_trace_record_guard_passes || true)"
         if [ "$value" = 1 ] && [ "${attempts:-0}" -gt 0 ] && [ "${created:-0}" -gt 0 ] && [ "${created:-0}" -le 8192 ] && [ "${retired:-0}" -gt 0 ]; then
             record_result counters stats-hot-trace-records PASS "hot_trace_record_create_attempts=$attempts hot_trace_record_created=$created hot_trace_record_live=$live hot_trace_record_retired=$retired"
         else
             record_result counters stats-hot-trace-records FAIL "hot_trace_enabled=${value:-missing} hot_trace_record_create_attempts=${attempts:-missing} hot_trace_record_created=${created:-missing} hot_trace_record_live=${live:-missing} hot_trace_record_retired=${retired:-missing}"
+        fi
+        if [ "${guard_checks:-0}" -gt 0 ] && [ "$guard_checks" = "$guard_passes" ]; then
+            record_result counters stats-hot-trace-guard-checks PASS "hot_trace_record_guard_checks=$guard_checks hot_trace_record_guard_passes=$guard_passes"
+        else
+            record_result counters stats-hot-trace-guard-checks FAIL "hot_trace_record_guard_checks=${guard_checks:-missing} hot_trace_record_guard_passes=${guard_passes:-missing}"
         fi
         if [ "${retire_page:-0}" -gt 0 ] && [ $(( ${retire_source:-0} + ${retire_target:-0} )) -gt 0 ]; then
             record_result counters stats-hot-trace-retirement-paths PASS "hot_trace_record_retire_page=$retire_page hot_trace_record_retire_source=$retire_source hot_trace_record_retire_target=$retire_target"
