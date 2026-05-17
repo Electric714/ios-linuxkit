@@ -174,6 +174,7 @@
 		AA000121AF96D90D00FFB7A4 /* fakefs.c in Sources */ = {isa = PBXBuildFile; fileRef = BB10E5C2248DBA7B009C7A74 /* fakefs.c */; };
 		AA000122AF96D90D00FFB7A4 /* ArrowBarButton.m in Sources */ = {isa = PBXBuildFile; fileRef = BBFB557F21587B6800DFE6DE /* ArrowBarButton.m */; };
 		AA000130AF96D90D00FFB7A4 /* DebugServer.c in Sources */ = {isa = PBXBuildFile; fileRef = AA000131AF96D90D00FFB7A4 /* DebugServer.c */; };
+		C0DEF0030000000000000001 /* MountsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF0020000000000000001 /* MountsViewController.m */; };
 		BB0F552E239F8A790032A2A1 /* Icons.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB0F552D239F8A790032A2A1 /* Icons.plist */; };
 		BB10E5C9248DBAAC009C7A74 /* libarchive.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BB10E5C8248DBAA1009C7A74 /* libarchive.a */; };
 		BB10E5D0248DC21D009C7A74 /* Roots.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BB10E5CF248DC21D009C7A74 /* Roots.storyboard */; };
@@ -212,6 +213,7 @@
 		BB28C7BB268975AE00BDC834 /* LocationDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = BB235533235D488400139E00 /* LocationDevice.m */; };
 		BB28C7BC268975B000BDC834 /* PasteboardDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = 650B337322EA235C00B4C03E /* PasteboardDevice.m */; };
 		BB28C7BF2689799800BDC834 /* Roots.m in Sources */ = {isa = PBXBuildFile; fileRef = BB10E5CD248DBE66009C7A74 /* Roots.m */; };
+		C0DEF0040000000000000001 /* MountsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DEF0020000000000000001 /* MountsViewController.m */; };
 		BB2B4DAC231D94C300CB578B /* hterm_all.js in Resources */ = {isa = PBXBuildFile; fileRef = BB2B4DAB231D94C300CB578B /* hterm_all.js */; };
 		BB2B4DAD231D998300CB578B /* term.js in Resources */ = {isa = PBXBuildFile; fileRef = BB4A539C1FAA490C00A72ACE /* term.js */; };
 		BB2B4DAE231D998300CB578B /* term.css in Resources */ = {isa = PBXBuildFile; fileRef = BB4A53AF1FAA787900A72ACE /* term.css */; };
@@ -530,6 +532,8 @@
 		0FC2383B2991FB82004C09EC /* mmx.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mmx.c; sourceTree = "<group>"; };
 		408A2639236440F8008A4E81 /* iOSFS.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOSFS.m; sourceTree = "<group>"; };
 		408A263B23644102008A4E81 /* iOSFS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iOSFS.h; sourceTree = "<group>"; };
+		C0DEF0010000000000000001 /* MountsViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MountsViewController.h; sourceTree = "<group>"; };
+		C0DEF0020000000000000001 /* MountsViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MountsViewController.m; sourceTree = "<group>"; };
 		40AEF95FC5D957E4D8F5E6A1 /* AppARM64-ffmpeg.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "AppARM64-ffmpeg.xcconfig"; sourceTree = "<group>"; };
 		49087C13295DF0490058075B /* hook.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hook.h; sourceTree = "<group>"; };
 		49087C14295DF0490058075B /* hook.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = hook.c; sourceTree = "<group>"; };
@@ -1480,6 +1484,8 @@
 				BB267FA523A48F1500ED7CAF /* AltIconViewController.m */,
 				BB101B362364CF57000A93BC /* FontPickerViewController.h */,
 				BB101B372364CF57000A93BC /* FontPickerViewController.m */,
+				C0DEF0010000000000000001 /* MountsViewController.h */,
+				C0DEF0020000000000000001 /* MountsViewController.m */,
 				491C4C1D27C8FB65008B1DFA /* Theme.h */,
 				491C4C1E27C8FB65008B1DFA /* Theme.m */,
 				491C4C1527C8F84A008B1DFA /* ThemesViewController.h */,
@@ -2479,6 +2485,7 @@
 				AA00011BAF96D90D00FFB7A4 /* ExceptionExfiltrator.m in Sources */,
 				AA00011CAF96D90D00FFB7A4 /* AccessibilityFixes.m in Sources */,
 				AA00011DAF96D90D00FFB7A4 /* AboutViewController.m in Sources */,
+				C0DEF0030000000000000001 /* MountsViewController.m in Sources */,
 				AA00011EAF96D90D00FFB7A4 /* UIViewController+Extras.m in Sources */,
 				AA00011FAF96D90D00FFB7A4 /* NSObject+SaneKVO.m in Sources */,
 				AA000120AF96D90D00FFB7A4 /* ThemesViewController.m in Sources */,
@@ -2585,6 +2592,7 @@
 				49FF844B2A06249F00850B7A /* ExceptionExfiltrator.m in Sources */,
 				497A08C12963401100B323CF /* AccessibilityFixes.m in Sources */,
 				BB28C7A626896B1F00BDC834 /* AboutViewController.m in Sources */,
+				C0DEF0040000000000000001 /* MountsViewController.m in Sources */,
 				BB28C7A726896B1F00BDC834 /* UIViewController+Extras.m in Sources */,
 				BB28C7A826896B1F00BDC834 /* NSObject+SaneKVO.m in Sources */,
 				496C7AB327CC734D005D7613 /* ThemesViewController.m in Sources */,

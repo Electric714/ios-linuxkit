@@ -122,6 +122,7 @@ static int bootError;
     generic_mknodat(AT_PWD, "/dev/urandom", S_IFCHR|0666, dev_make(MEM_MAJOR, DEV_URANDOM_MINOR));
     
     generic_mkdirat(AT_PWD, "/dev/pts", 0755);
+    generic_mkdirat(AT_PWD, "/mnt", 0755);
     
     // Permissions on / have been broken for a while, let's fix them
     generic_setattrat(AT_PWD, "/", (struct attr) {.type = attr_mode, .mode = 0755}, false);

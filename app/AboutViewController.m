@@ -12,6 +12,7 @@
 #import "Roots.h"
 #import "UserPreferences.h"
 #import "iOSFS.h"
+#import "MountsViewController.h"
 #import "UIApplication+OpenURL.h"
 #import "NSObject+SaneKVO.h"
 
@@ -24,6 +25,7 @@
 
 @property (weak, nonatomic) IBOutlet UITableViewCell *sendFeedback;
 
+@property (weak, nonatomic) IBOutlet UITableViewCell *mountsCell;
 @property (weak, nonatomic) IBOutlet UITableViewCell *exportContainerCell;
 @property (weak, nonatomic) IBOutlet UITableViewCell *resetMountsCell;
 @property (weak, nonatomic) IBOutlet UITableViewCell *resetRootfsCell;
@@ -97,6 +99,8 @@
     UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
     if (cell == self.sendFeedback) {
         [UIApplication openURL:@"https://github.com/rcarmo/ios-linuxkit/issues"];
+    } else if (cell == self.mountsCell) {
+        [self.navigationController pushViewController:[MountsViewController new] animated:YES];
     } else if (cell == self.exportContainerCell) {
         // copy the files to the app container so they can be extracted from iTunes file sharing
         NSURL *container = ContainerURL();
