@@ -102,12 +102,11 @@ void arm64_eager_prechain_set_enabled_from_env(const char *env) {
 }
 
 void arm64_eager_prechain_incoming_set_enabled_from_env(const char *env) {
-    // Keep incoming prechain opt-in: repeated fresh Go compiler builds exposed
-    // intermittent guest corruption when existing source blocks were patched
-    // from a later target compile path. Outgoing prechain remains the default
-    // bounded optimization; incoming scans can still be enabled explicitly for
-    // diagnostics with ISH_ARM64_EAGER_PRECHAIN_INCOMING=1.
-    arm64_eager_prechain_incoming_enabled = env_enabled_default(env, false);
+    // Incoming prechain is default-on again after hardening: only still-fake
+    // slots are patched, and older-block incoming patching is skipped while
+    // multiple guest threads are active. Keep ISH_ARM64_EAGER_PRECHAIN_INCOMING=0
+    // as an explicit diagnostic/safety opt-out.
+    arm64_eager_prechain_incoming_enabled = env_enabled_default(env, true);
 }
 
 void arm64_block_stats_dump_if_enabled(void) {

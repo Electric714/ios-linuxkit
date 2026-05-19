@@ -72,3 +72,16 @@ A row is not a pass when any of these happen:
 4. A row is silently skipped instead of reported as passing, failing, or unsupported.
 
 When fixing a runtime bug, add or update a focused row in the relevant harness so the failure stays covered.
+
+## 2026-05-19 Go compiler validation note
+
+Fresh Go compiler builds are a high-value ARM64 executor stress test. Alpine 3.23's `go` package provides standard-library source but no precompiled `/usr/lib/go/pkg/linux_arm64` archives, so cold-cache `go run` can exceed the historical 240s row timeout. Use `TIMEOUT_S=600` when running full runtime coverage on a cold Go cache.
+
+The Go compiler corruption tracked on the `go` branch was fixed by hardening ARM64 incoming eager prechain and then re-enabling the guarded path by default. Validation evidence before default promotion:
+
+- default with incoming disabled: fresh `go build` stress **4 / 4** plus audit **3 / 3**;
+- warm relink stress: **3 / 3**;
+- guarded `ISH_ARM64_EAGER_PRECHAIN_INCOMING=1` fresh stress: **4 / 4** with nonzero incoming patches;
+- full runtime coverage: **83 / 83** at `/workspace/tmp/ish-arm64-runtime-coverage-20260519-205257.md`.
+
+After default promotion, re-run fresh Go stress and full coverage with `ISH_ARM64_EAGER_PRECHAIN_INCOMING` unset; keep `ISH_ARM64_EAGER_PRECHAIN_INCOMING=0` as a diagnostic/safety opt-out.

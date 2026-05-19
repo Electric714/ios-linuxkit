@@ -191,3 +191,23 @@ The package rows avoid native credential/keychain integrations during unauthenti
 ## 2026-05-17 ARM64 executor diagnostics status
 
 Speculative Phase 4 hot-trace candidate instrumentation was attempted and removed after review because it added maintenance/diagnostic overhead without significant measured gains or a near-term viable speed path. Retained executor diagnostics are limited to opt-in block/chaining/prechain counters behind `ISH_ARM64_BLOCK_STATS=1`; exact-output runtime coverage should still run without stats output.
+
+## 2026-05-19 Go compiler / incoming prechain audit
+
+Repeated fresh-cache Go compiler builds on Alpine 3.23.4 / Go 1.25.10 exposed intermittent guest corruption when ARM64 incoming eager prechain was enabled by default. The failures appeared as nondeterministic `cmd/compile` crashes while compiling standard-library packages such as `fmt`, `syscall`, and `bufio`. Reporting a single guest CPU did not fix the issue; disabling prechain did, and outgoing-only prechain remained stable.
+
+Root cause: incoming prechain patches older source blocks from the later target-block compile path. That is riskier than outgoing prechain because another guest thread may already be executing one of those older blocks. The fix hardens incoming prechain so it:
+
+- only patches slots still marked as ARM64 fake IPs;
+- skips older-block incoming patching while multiple guest threads are active.
+
+Guarded incoming prechain is enabled by default again after validation. Use `ISH_ARM64_EAGER_PRECHAIN_INCOMING=0` as an explicit diagnostic/safety opt-out.
+
+Validation after the hardening and before default promotion:
+
+- default with incoming disabled: fresh Go builds **4 / 4** plus later audit default **3 / 3**;
+- warm Go relinks: **3 / 3**;
+- guarded incoming prechain with `ISH_ARM64_EAGER_PRECHAIN_INCOMING=1`: **4 / 4** fresh Go builds with nonzero incoming patches;
+- full runtime coverage: **83 / 83** at `/workspace/tmp/ish-arm64-runtime-coverage-20260519-205257.md`.
+
+Cold-cache Go rows require a realistic timeout because Alpine's Go package ships standard-library source but no precompiled `/usr/lib/go/pkg/linux_arm64` archives; use `TIMEOUT_S=600` for full coverage that includes cold `go run`.
