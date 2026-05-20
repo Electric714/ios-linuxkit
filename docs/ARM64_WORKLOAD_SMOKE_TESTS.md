@@ -1,6 +1,6 @@
 # ios-linuxkit workload smoke tests
 
-Updated: 2026-05-19
+Updated: 2026-05-20
 
 This file lists workload-level tests that sit above the core runtime gate. Each row should be reproducible from the Linux-host harness and should produce a bounded pass/fail/unsupported report.
 
@@ -8,8 +8,8 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 
 | Workload | Status | Why it exists | Report / details |
 |---|---:|---|---|
-| Core runtime coverage | **83 / 83 passing** | Fast regression gate for startup, package manager, syscall ABI, ARM64 fixtures, and language smoke rows. | `/workspace/tmp/ish-arm64-runtime-coverage-20260517-162650.md`; [runtime validation](RUNTIME_VALIDATION.md) |
-| CLI corner cases | **57 pass / 2 unsupported / 0 fail** | TUI, DNS/HTTPS, Git clone, Docker diagnostics, ptrace/netlink visibility, Unix tooling, plus bounded application probes derived from the upstream iSH “What works?” wiki. | `/workspace/tmp/ish-arm64-cli-corner-smoke-20260520-*.md` |
+| Core runtime coverage | **83 / 83 passing** | Fast regression gate for startup, package manager, syscall ABI, ARM64 fixtures, and language smoke rows. | `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`; [runtime validation](RUNTIME_VALIDATION.md) |
+| CLI corner cases | **57 pass / 2 unsupported / 0 fail** | TUI, DNS/HTTPS including BIND `dig` UDP, Git clone, Docker diagnostics, ptrace/netlink visibility, Unix tooling, plus bounded application probes derived from the upstream iSH “What works?” wiki. | `/workspace/tmp/ish-arm64-cli-corner-smoke-20260520-*.md` |
 | npm CLI package lane | **16 / 16 passing** | Startup/help/version probes for fast-moving npm CLI packages. | `/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md` |
 | Node/Bun timing | **10 / 10 passing** | Startup/eval/JSON/FS timings for executor work. | Latest post-hot-trace-removal pair: default `/workspace/tmp/ish-arm64-node-bun-perf-20260517-162526.md`, stats `/workspace/tmp/ish-arm64-node-bun-perf-20260517-162607.md` |
 | Bun workspace/server | Install/start/listen passing | JS workspace install, recursive copies, JSC behavior, HTTP serving. | internal workload log |
@@ -31,7 +31,7 @@ This file lists workload-level tests that sit above the core runtime gate. Each 
 | Area | Rows / notes |
 |---|---|
 | TUI | `htop` and `btop` run inside detached `tmux` sessions and exit through explicit key paths. |
-| DNS/HTTPS | `drill example.com`, `dig example.com`, `curl https://github.com`, `git ls-remote`, and a shallow `rcarmo/go-gte` clone cover DNS, c-ares/libcurl, and Git. |
+| DNS/HTTPS | `drill example.com`, `dig example.com` (BIND/libuv UDP `IP_RECVERR` path), `curl https://github.com`, `git ls-remote`, and a shallow `rcarmo/go-gte` clone cover DNS, c-ares/libcurl, and Git. |
 | Docker | CLI and `dockerd --version` pass. Daemon startup and `hello-world` are `UNSUPPORTED` when namespaces/cgroups/mount behavior are absent. |
 | Diagnostics | `strace` keeps the known `PTRACE_SETOPTIONS` limitation visible; `iproute2` accepts explicit AF_NETLINK-unavailable diagnostics. |
 | Wiki-derived application probes | Non-interactive checks for known-working iSH wiki programs: shells (`bash`, `zsh`, `fish`), editors (`nano`, `vim`, `nvim`, `ed`), TUI/text tools (`screen`, `mc`, `mutt`, `figlet`, `links`, `lynx`, `w3m`, `eza`), languages (`perl`, `ruby`, `gem`, `php`, `gawk`), media/network/data tools (`ffmpeg`, `wget`, `ssh`, `dropbear`, `lftp`, `adb`, `openssl`, `sqlite3`, `yt-dlp`). |

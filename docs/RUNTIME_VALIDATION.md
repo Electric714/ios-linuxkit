@@ -6,7 +6,7 @@ This file describes the validation gates used before advertising a runtime chang
 
 | Item | Value |
 |---|---|
-| Core report | `/workspace/tmp/ish-arm64-runtime-coverage-20260517-130725.md` |
+| Core report | `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md` |
 | Core result | **83 / 83 passing** |
 | Binary | `build-arm64-linux/ish` |
 | Rootfs | `alpine-arm64-fakefs` |
@@ -24,7 +24,7 @@ Related docs: [workload smoke tests](ARM64_WORKLOAD_SMOKE_TESTS.md), [syscall co
 |---|---|---|
 | Build | `make build-arm64-linux-all` | Linux ARM64 release/debug variants build. |
 | Core runtime | `make test-arm64-runtime-coverage REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1200` | Markdown report; current baseline **83 / 83**. |
-| CLI corner cases | `make test-arm64-cli-corner-smoke ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=240 INSTALL_TIMEOUT_S=1200` | Current baseline **27 pass / 2 unsupported / 0 fail**. |
+| CLI corner cases | `make test-arm64-cli-corner-smoke ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=240 INSTALL_TIMEOUT_S=1200` | Current baseline **57 pass / 2 unsupported / 0 fail**. |
 | npm CLI package lane | `make test-arm64-npm-cli-runtime-coverage ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180 INSTALL_TIMEOUT_S=1800` | Current baseline **16 / 16**. |
 | Node/Bun timing | `make test-arm64-node-bun-perf ROOTFS_LANES=alpine=$(pwd)/alpine-arm64-fakefs REPORT_DIR=/workspace/tmp TIMEOUT_S=180` | Timing/status table for executor changes. |
 
@@ -49,14 +49,14 @@ Related docs: [workload smoke tests](ARM64_WORKLOAD_SMOKE_TESTS.md), [syscall co
 |---|---|
 | IPC | SysV shared memory, SysV message queues, semaphores, POSIX message queues. |
 | Modern syscalls | `signalfd4`, scheduler priority calls, `memfd_create`, `openat2`, `faccessat2`, `fchmodat2(AT_EMPTY_PATH)`, `preadv2`, `pwritev2`, `process_vm_readv`, `process_vm_writev`. |
-| Sockets | UDP/TCP, socket options, `sendmsg`/`recvmsg`, ARM64 `SCM_RIGHTS`, oversized UDP `recvfrom()` source buffers. |
+| Sockets | UDP/TCP, socket options including UDP `IP_RECVERR`/`IPV6_RECVERR`, `sendmsg`/`recvmsg`, ARM64 `SCM_RIGHTS`, oversized UDP `recvfrom()` source buffers. |
 | ARM64 | `DCZID_EL0`/`dc zva`, signal `ucontext_t`, per-thread `sigaltstack`, CCMP/CCMN `NV`, DMB/DSB/ISB, self-modifying code. |
 
 ## Optional/diagnostic lanes
 
 | Lane | Purpose | Current status |
 |---|---|---|
-| CLI corner cases | TUI tools, DNS/HTTPS, GitHub clone, Docker CLI/daemon diagnostics, `strace`, `lsof`, netlink visibility. | **27 pass / 2 unsupported / 0 fail**. Docker daemon/container rows are unsupported without container kernel primitives. |
+| CLI corner cases | TUI tools, DNS/HTTPS, GitHub clone, Docker CLI/daemon diagnostics, `strace`, `lsof`, netlink visibility. | **57 pass / 2 unsupported / 0 fail**. `dig` DNS now passes through real UDP; Docker daemon/container rows are unsupported without container kernel primitives. |
 | npm CLI package lane | Unauthenticated install/startup/help/version probes for npm-installed CLIs. | **16 / 16** in Alpine npm lane. Debian/glibc lane remains blocked by thread/libuv assertions. |
 | Node/Bun perf | Timing table for executor changes and optional block/prechain statistics. | Use before/after dispatch optimization work; default reports must stay free of stats output. Latest post-hot-trace-removal pair: default `/workspace/tmp/ish-arm64-node-bun-perf-20260517-162526.md` and stats `/workspace/tmp/ish-arm64-node-bun-perf-20260517-162607.md`, both **10 / 10**. |
 | ARM64 executor diagnostics | `ISH_ARM64_BLOCK_STATS=1` and `ISH_ARM64_FUSION_STATS=1` counters. | Opt-in only; do not run exact-output runtime coverage with these diagnostics because they intentionally write `ARM64_*_STATS` lines. Speculative hot-trace diagnostics and sidecar records were attempted but removed after showing no significant gains relative to overhead. |
@@ -82,6 +82,6 @@ The Go compiler corruption tracked on the `go` branch was fixed by hardening ARM
 - default with incoming disabled: fresh `go build` stress **4 / 4** plus audit **3 / 3**;
 - warm relink stress: **3 / 3**;
 - guarded `ISH_ARM64_EAGER_PRECHAIN_INCOMING=1` fresh stress: **4 / 4** with nonzero incoming patches;
-- full runtime coverage: **83 / 83** at `/workspace/tmp/ish-arm64-runtime-coverage-20260519-205257.md`.
+- full runtime coverage: **83 / 83** at `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`.
 
 After default promotion, re-run fresh Go stress and full coverage with `ISH_ARM64_EAGER_PRECHAIN_INCOMING` unset; keep `ISH_ARM64_EAGER_PRECHAIN_INCOMING=0` as a diagnostic/safety opt-out.

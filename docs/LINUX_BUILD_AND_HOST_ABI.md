@@ -17,14 +17,14 @@ Darwin-only assumptions through the runtime.
 | Network | Primary wired interface `enP1p49s0`; Wi-Fi device present as `wlP2p1s0` |
 | OS/kernel | Orange Pi 1.0.2 Trixie / Debian Trixie, Linux `6.6.89-cix`, `aarch64` |
 | Toolchain | Clang 19.1.7, Meson 1.7.0, Ninja 1.12.1, GNU Make 4.4.1 |
-| Workspace | `/workspace/projects/ish-arm64` |
+| Workspace | `/workspace/projects/ish-arm64-go` |
 
 ## Current Linux build
 
 Verified on this host with:
 
 ```bash
-cd /workspace/projects/ish-arm64
+cd /workspace/projects/ish-arm64-go
 CC=clang meson setup build-arm64-linux -Dguest_arch=arm64 --buildtype=release
 ninja -C build-arm64-linux
 ```
@@ -40,7 +40,7 @@ Result:
 Verified runnable on Linux with realfs:
 
 ```bash
-cd /workspace/projects/ish-arm64
+cd /workspace/projects/ish-arm64-go
 ./build-arm64-linux/ish -r / /bin/echo hello
 ```
 
@@ -270,7 +270,7 @@ Directory reads now propagate or infer Linux `DT_*` values:
 
 Validation: a minimal Bun recursive `fs.cpSync` directory tree copy succeeds,
 the workspace bootstrap no longer logs the `ENOTSUP ... copyfile` warning, and staged
-runtime coverage remains **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md`), with the later `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall, C# NativeAOT SDK-availability, high-address `MAP_NORESERVE` reservation-overlap probes, and Phase 4 default-off executor reconnaissance validation included in the staged gate.
+runtime coverage remains **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`), with the later `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall, C# NativeAOT SDK-availability, high-address `MAP_NORESERVE` reservation-overlap probes, and Phase 4 default-off executor reconnaissance validation included in the staged gate.
 
 ## Blocking I/O and exit cleanup
 

@@ -1,13 +1,13 @@
 # ios-linuxkit ARM64 production baseline
 
 Date: 2026-05-10
-Reviewed: 2026-05-17
+Reviewed: 2026-05-20
 
 ## Known-good code
 
-- Code baseline: current `master` at the 2026-05-17 documentation review, successor to tagged validation point `arm64-openjdk21-prod-20260513-r6`; this pass includes expanded language/runtime coverage, ARM64 sysreg/FP16 conversion fixes, bounds-checked path/symlink expansion, guest-signal-aware blocking I/O/exit cleanup, socket ABI hardening through ARM64 `SCM_RIGHTS` control-message validation, `fchmodat2(AT_EMPTY_PATH)` and scheduler priority syscall coverage, npm CLI package startup coverage, Docker CLI/daemon unsupported diagnostics, opt-in ARM64 internal-continue/taken-internal validation, C# NativeAOT SDK availability, reservation-aware high-address `MAP_NORESERVE` handling, and retained ARM64 executor block/chaining/prechain diagnostics. Speculative hot-trace instrumentation was attempted but removed after showing no significant gains relative to overhead.
-- Previous tagged production audit baseline: `arm64-openjdk21-prod-20260513-r6` (post-r5 validation point covering 44/44 staged coverage, Benchmarks Game refresh, Java mixed/interpreter probes, and go-gte smoke; current `master` adds the later Rust/Cargo, socket ABI, npm CLI package lane, `fchmodat2`, scheduler priority syscall, Docker diagnostic, C# NativeAOT SDK-availability, internal-continue/taken-internal, and high-address reservation audit fixes).
-- Branch: `master`.
+- Code baseline: current `go` branch at the 2026-05-20 documentation review, successor to tagged validation point `arm64-openjdk21-prod-20260513-r6`; this pass includes expanded language/runtime coverage, ARM64 sysreg/FP16 conversion fixes, bounds-checked path/symlink expansion, guest-signal-aware blocking I/O/exit cleanup, socket ABI hardening through ARM64 `SCM_RIGHTS` control-message validation, `fchmodat2(AT_EMPTY_PATH)` and scheduler priority syscall coverage, npm CLI package startup coverage, Docker CLI/daemon unsupported diagnostics, opt-in ARM64 internal-continue/taken-internal validation, C# NativeAOT SDK availability, reservation-aware high-address `MAP_NORESERVE` handling, and retained ARM64 executor block/chaining/prechain diagnostics. Speculative hot-trace instrumentation was attempted but removed after showing no significant gains relative to overhead.
+- Previous tagged production audit baseline: `arm64-openjdk21-prod-20260513-r6` (post-r5 validation point covering 44/44 staged coverage, Benchmarks Game refresh, Java mixed/interpreter probes, and go-gte smoke; the current `go` branch adds Rust/Cargo, socket ABI, npm CLI package lane, `fchmodat2`, scheduler priority syscall, Docker diagnostic, C# NativeAOT SDK-availability, internal-continue/taken-internal, high-address reservation, UDP extended-error, and ARM64-only cleanup fixes).
+- Branch: `go`.
 - Remote target for this working branch: `https://github.com/rcarmo/ios-linuxkit.git`; `origin` is configured to this repository for fetch and push.
 
 ## Host used for validation
@@ -38,7 +38,7 @@ Reviewed: 2026-05-17
   - `OpenJDK Runtime Environment (build 21.0.10+7-alpine-r0)`
   - `OpenJDK 64-Bit Server VM (build 21.0.10+7-alpine-r0, mixed mode, sharing)`
 - `javac`: `21.0.10`
-- Go: `go1.25.9-r0` (`go version go1.25.9 linux/arm64`)
+- Go: `go1.25.10-r0` (`go version go1.25.10 linux/arm64`)
 - Node.js: `24.14.1-r0` (`v24.14.1`)
 - Bun: `1.3.13`
 - Python: `3.12.13`
@@ -48,13 +48,14 @@ Reviewed: 2026-05-17
 - Erlang: `erlang27-27.3.4.9-r0`, BEAM emulator `15.2.7.6`
 - Zig: `0.15.2`
 - GCC: `15.2.0-r2`
+- Docker: `29.5.1`
 - musl: `1.2.5-r23`
 
 ## Validation artifacts
 
-- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md`
+- Runtime coverage: `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`
   - Result: 83 / 83 passing
-  - Includes no-safety-valve/no-NETDIAG Rust Cargo/std coverage, Erlang helper-thread cleanup validation, UDP/TCP socket-option and `sendmsg`/`recvmsg`/`SCM_RIGHTS` ABI coverage, `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall coverage, high-address `MAP_NORESERVE` overlap regression coverage, C# NativeAOT SDK availability, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
+  - Includes no-safety-valve/no-NETDIAG Rust Cargo/std coverage, Erlang helper-thread cleanup validation, UDP/TCP socket-option including UDP extended-error option coverage and `sendmsg`/`recvmsg`/`SCM_RIGHTS` ABI coverage, `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscall coverage, high-address `MAP_NORESERVE` overlap regression coverage, C# NativeAOT SDK availability, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig smoke or availability coverage.
 - npm CLI package runtime coverage: `/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md`
   - Result: 16 / 16 passing on the Alpine npm lane.
   - Includes unauthenticated install/startup/version/help probes for fast-moving npm CLI packages; the Debian/glibc lane remains blocked by thread/libuv thread creation failures.

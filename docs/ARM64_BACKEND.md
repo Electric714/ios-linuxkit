@@ -25,9 +25,10 @@ CLI tools** directly on iPhone and iPad.
 > What this fork adds is an **ARM64 guest backend** inside that same Asbestos infrastructure:
 > new gadgets (`asbestos/guest-arm64/gadgets-aarch64/`) that map AArch64 guest instructions
 > to a few ARM64 host instructions each — same-architecture dispatch, so each guest
-> instruction costs only a handful of host instructions. The upstream x86 backend continues
-> to ship unchanged alongside it. Some prose below says "JIT" as convenient shorthand —
-> read it as "same-arch gadget dispatch," not runtime codegen.
+> instruction costs only a handful of host instructions. `ios-linuxkit` now carries only the
+> ARM64 guest/backend; the legacy x86 backend and debug tooling have been removed from this
+> tree. Some prose below says "JIT" as convenient shorthand — read it as "same-arch gadget
+> dispatch," not runtime codegen.
 
 ---
 
@@ -194,7 +195,7 @@ Lets host-app code share files with the Linux guest without copying.
 
 ### 5. Rootfs Management
 
-- **Alpine 3.21 aarch64** with full apk package manager
+- **Alpine 3.23.4 aarch64** with full apk package manager
 - **RootfsPatch.bundle**: Versioned overlay system for incremental rootfs updates
 - **Polyfills**: WebAssembly polyfill for undici/llhttp, fetch polyfill for HTTP downloads
 - **OPENSSL_armcap=0** and **GODEBUG/GOMAXPROCS** injection in `sys_execve`
@@ -305,9 +306,10 @@ to debug, not as cases to skip.
 
 Current Linux-host status from this pass:
 
-- Latest staged Alpine run: **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md`, `TIMEOUT_S=120`, `INSTALL_TIMEOUT_S=1200`).
+- Latest staged Alpine run: **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260519-205257.md`, `TIMEOUT_S=120`, `INSTALL_TIMEOUT_S=1200`).
+- Latest CLI corner-case smoke baseline: **57 pass / 2 unsupported / 0 fail**; `dig` now completes real UDP DNS through the BIND/libuv `IP_RECVERR`/`IPV6_RECVERR` path, leaving only Docker daemon/container rows unsupported.
 - Latest Alpine npm CLI package run: **16 / 16 passing** (`/workspace/tmp/ish-arm64-cli-package-runtime-coverage-20260515-200605.md`, unauthenticated install/startup/version/help probes).
-- Production package baseline: [ARM64_PRODUCTION_BASELINE.md](ARM64_PRODUCTION_BASELINE.md) (`alpine-arm64-fakefs` on Alpine 3.23.4 with OpenJDK 21.0.10_p7-r0; current `master` after tagged validation point `arm64-openjdk21-prod-20260513-r6`; `origin` is configured for `rcarmo/ios-linuxkit`).
+- Production package baseline: [ARM64_PRODUCTION_BASELINE.md](ARM64_PRODUCTION_BASELINE.md) (`alpine-arm64-fakefs` on Alpine 3.23.4 with OpenJDK 21.0.10_p7-r0, Go 1.25.10, Docker 29.5.1; current `go` branch after the ARM64-only cleanup; `origin` is configured for `rcarmo/ios-linuxkit`).
 - Non-trivial workload probes are grouped in [ARM64_WORKLOAD_SMOKE_TESTS.md](ARM64_WORKLOAD_SMOKE_TESTS.md): Bun workspace/server, `rcarmo/go-gte`, the Benchmarks Game rows, and Node/Bun executor timing/diagnostic gates.
 - C coverage is green: `gcc --version`, compile, and execute all pass.
 - SysV IPC coverage is green: shared memory and message queues work across `fork()`.
@@ -431,8 +433,10 @@ See also:
 
 ## Performance
 
-Measured with `benchmark/run.sh` on macOS 26.4.1 / Apple Silicon using guest-side
-timing (startup overhead excluded). Full details in
+Historical x86-vs-ARM64 measurements were generated before the ARM64-only cleanup with the
+now-retired comparison harness on macOS 26.4.1 / Apple Silicon using guest-side timing
+(startup overhead excluded). They remain useful as provenance for why the ARM64 backend
+became the only supported guest. Full archived details are in
 **[benchmark/BENCHMARK_PERF.md](benchmark/BENCHMARK_PERF.md)**.
 
 ### Overhead vs Native (by workload)
@@ -456,23 +460,25 @@ timing (startup overhead excluded). Full details in
 > **Why ARM64 wins**: same-architecture gadget dispatch (each guest instruction costs only a
 > few ARM64 host instructions inside its gadget), full NEON + crypto extensions, 48-bit
 > address space for V8/Go/Rust, and Node.js-specific fixes (V8 binary patch, guard pages,
-> `--jitless` injection, io_uring syscall) that the upstream x86 branch lacks. Node.js 22
-> cannot run on x86 iSH (missing syscall 425 / `io_uring_setup`).
+> `--jitless` injection, and syscall coverage). These historical comparisons explain why the
+> legacy x86 guest/backend was retired from `ios-linuxkit`.
 
 ## Compatibility
 
-205 tests across 18 categories (Core OS, FileOps, Text, Build, Python, Node.js, Go/Rust/Perl/…,
-Network, VCS, Editors, Shell, DB, Media, Crypto, SysMon, Debug, PkgMgr, Signal). Both
-architectures tested under fakefs with the same installed package set. Full report:
-**[benchmark/BENCHMARK_COMPAT.md](benchmark/BENCHMARK_COMPAT.md)**.
+The archived compatibility comparison covered 205 tests across 18 categories (Core OS,
+FileOps, Text, Build, Python, Node.js, Go/Rust/Perl/…, Network, VCS, Editors, Shell, DB,
+Media, Crypto, SysMon, Debug, PkgMgr, Signal). The historical report remains under
+**[benchmark/BENCHMARK_COMPAT.md](benchmark/BENCHMARK_COMPAT.md)**; current gates are the
+ARM64 runtime and workload smoke suites described in [RUNTIME_VALIDATION.md](RUNTIME_VALIDATION.md)
+and [ARM64_WORKLOAD_SMOKE_TESTS.md](ARM64_WORKLOAD_SMOKE_TESTS.md).
 
 | Architecture | Pass | Fail | Rate |
 |---|:---:|:---:|:---:|
-| **x86** (Jitter, threaded-code) | 201 | 4 | **98%** |
+| **legacy x86** (Jitter, threaded-code) | 201 | 4 | **98%** |
 | **ARM64** (Asbestos, threaded-code) | 205 | 0 | **100%** |
 
-**x86's 4 failures** are all genuine limitations (not benchmark bugs):
-`automake`, `perl` (/dev/null write quirk), `go env`, `go compile` (32-bit VA).
+The legacy x86 row is historical only; the current source tree no longer builds or ships that
+backend.
 
 ---
 
@@ -559,12 +565,11 @@ iSH/
 │   ├── DebugServer.c/h          # JSON-RPC debug server
 │   └── RootfsPatch.bundle/      # Versioned rootfs overlay
 ├── benchmark/
-│   ├── run.sh                    # Unified benchmark entry point
-│   └── assets/                   # shellbench.sh + cbench_lite + prebuilt binaries
+│   └── assets/                   # Reusable benchmark scripts/source assets
 └── docs/
     └── benchmark/
-        ├── BENCHMARK_PERF.md     # Archived performance report
-        └── BENCHMARK_COMPAT.md   # Archived compatibility report
+        ├── BENCHMARK_PERF.md     # Archived historical performance report
+        └── BENCHMARK_COMPAT.md   # Archived historical compatibility report
 ```
 
 ---

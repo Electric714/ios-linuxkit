@@ -1,12 +1,12 @@
 # ios-linuxkit ARM64 smoke issues and syscall coverage appraisal
 
-Updated: 2026-05-17
+Updated: 2026-05-20
 
 ## Executive status
 
 The current ARM64 Linux-host fakefs is in a good core-runtime state:
 
-- Staged runtime coverage: **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md`).
+- Staged runtime coverage: **83 / 83 passing** (`/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`).
 - Benchmarks Game core tier: **9 official language rows × 10 benchmarks = 90 / 90 runs passing**.
 - Java-equivalent probe: **10 / 10 passing** in HotSpot default mixed mode; interpreter fallback mode also passes.
 - Native compiler rows additionally build inside the guest: **GCC 10 / 10 builds**, **G++ 10 / 10 builds**.
@@ -64,7 +64,7 @@ The implemented set is now strong for the workloads currently passing:
 - memory: `mmap`, high ARM64 mmap hints, high anonymous `MAP_NORESERVE` arenas, reservation-aware high-hole allocation/alignment, `munmap`, `mprotect`, `mremap`, `madvise`, `mincore`, `mlock`, `msync`, lazy `MAP_NORESERVE` reservations;
 - synchronization: futex wait/wake/requeue/wake-op, robust lists, nanosleep/timers;
 - filesystems: `openat`, `read`/`write`, `readv`/`writev`, `pread`/`pwrite`, `preadv`/`pwritev`, `getdents64`, `statx`, `fstatat`, `fchmodat2(AT_EMPTY_PATH)`, `copy_file_range`, `sendfile`, `splice`, chmod/chown/link/symlink/rename/unlink/mkdir, `statfs`/`fstatfs`;
-- sockets: core TCP/UDP/Unix socket paths, UDP `sendto`/`recvfrom`, TCP `listen`/`accept`, `getsockname`, socket options, `socketpair`, `accept4`, `sendmsg`/`recvmsg`, `sendmmsg`/`recvmmsg`, fd passing;
+- sockets: core TCP/UDP/Unix socket paths, UDP `sendto`/`recvfrom`, TCP `listen`/`accept`, `getsockname`, socket options including UDP extended-error options, `socketpair`, `accept4`, `sendmsg`/`recvmsg`, `sendmmsg`/`recvmmsg`, fd passing;
 - IPC: SysV shared memory, SysV semaphores, SysV message queues, POSIX message queues, eventfd, epoll, timerfd, inotify;
 - runtime probes: `rseq`, `memfd_create`, `openat2`, `faccessat2`, `fchmodat2`, `preadv2`, `pwritev2`, `process_vm_readv`, `process_vm_writev`, and quiet fallback stubs for remaining modern optional probes.
 
@@ -148,7 +148,7 @@ Noisy ARM64 fault diagnostics (`page fault ...`, register dumps, block instructi
 
 ARM64 iSH now keeps guest barrier classes distinct at translation time: `DMB` emits a host `dmb`, `DSB` emits a host `dsb`, and `ISB` emits a host `isb`. Because the current decoder folds all CRm shareability/domain variants into one gadget per barrier class, the `DMB` and `DSB` gadgets use the strongest host `sy` domain so guest `SY`/`LD`/`ST` forms are not under-serialized.
 
-The staged runtime suite includes `arm64 barriers DMB/DSB/ISB`, which compiles and executes common barrier encodings (`dmb sy`, `dmb ish`, `dmb ishld`, `dmb ishst`, `dsb sy`, `dsb ish`, and `isb`) inside the guest. Latest staged coverage is `/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md` with **83 / 83 passing**.
+The staged runtime suite includes `arm64 barriers DMB/DSB/ISB`, which compiles and executes common barrier encodings (`dmb sy`, `dmb ish`, `dmb ishld`, `dmb ishst`, `dsb sy`, `dsb ish`, and `isb`) inside the guest. Latest staged coverage is `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md` with **83 / 83 passing**.
 
 ## 2026-05-12 production audit hardening
 
@@ -165,7 +165,7 @@ Validation after these changes: `make build-arm64-linux-all`, staged runtime cov
 
 ## 2026-05-13 runtime coverage expansion and cleanup fixes
 
-The staged runtime suite has continued expanding since this pass and now validates **83 / 83 passing** in `/workspace/tmp/ish-arm64-runtime-coverage-20260517-092759.md`; this 2026-05-13 tranche added the following language/toolchain smoke or availability coverage:
+The staged runtime suite has continued expanding since this pass and now validates **83 / 83 passing** in `/workspace/tmp/ish-arm64-runtime-coverage-20260519-214307.md`; this 2026-05-13 tranche added the following language/toolchain smoke or availability coverage:
 
 - Python/Lua: version and eval smoke.
 - Java/Clojure: default mixed-mode `javac`/`java`, Java interpreter fallback, and `clojure.main` eval smoke.
