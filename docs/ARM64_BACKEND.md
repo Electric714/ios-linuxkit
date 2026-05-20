@@ -4,9 +4,9 @@
 
 The `ish-arm64` work added a **native ARM64 guest backend** to upstream iSH's threaded-code interpreter
 (*Asbestos*, formerly called *jit* — renamed upstream in 2024 because it doesn't actually emit
-machine code). The new backend emulates AArch64 Linux on Apple Silicon, running alongside
-the original x86 (i386) guest backend. The result is a dramatically faster and more
-compatible Linux environment capable of running **Python, Node.js, Go, Rust, and native
+machine code). `ios-linuxkit` is now ARM64-only: the legacy x86/i386 guest backend and its
+Linux-kernel/Unicorn debug paths have been removed. The result is a dramatically faster and
+more compatible Linux environment capable of running **Python, Node.js, Go, Rust, and native
 CLI tools** directly on iPhone and iPad.
 
 > ## 🚢 Production Use
@@ -205,12 +205,11 @@ Lets host-app code share files with the Linux guest without copying.
 
 | Target | Scheme | xcconfig | Guest Arch | Bundle ID Suffix |
 |--------|--------|----------|------------|------------------|
-| x86 (original) | iSH | `App.xcconfig` | i386 | — |
 | ARM64 | iSH-ARM64 | `AppARM64.xcconfig` | aarch64 | `.arm64` |
 | ARM64 + FFmpeg | iSH-ARM64-ffmpeg | `AppARM64-ffmpeg.xcconfig` | aarch64 | `.arm64` |
 
 The ARM64 target links meson-built libraries (`libish.a`, `libish_emu.a`, `libfakefs.a`) directly
-from `build-arm64-release/`, bypassing Xcode's auto-discovery of x86 library targets.
+from `build-arm64-release/`.
 
 ```bash
 # Build ARM64 CLI (macOS, for testing)
@@ -368,7 +367,7 @@ Current Linux-host status from this pass:
 - Gated ARM64 guest SIGSEGV stack/map dumps behind `ISH_TRACE_FAULTS` so runtimes that deliberately handle null/check traps (HotSpot included) no longer emit production noise by default.
 - Stopped advertising optional crypto/LSE features in `AT_HWCAP` until those helper sets are fully coverage-clean; runtimes can fall back to baseline FP/ASIMD paths.
 - Added `LDNP`/`STNP` handling by treating non-temporal pair loads/stores like ordinary no-writeback pair transfers. This removes the `0xa8007c3f` illegal-instruction trap seen in Bun TypeScript runs.
-- Hardened production-adjacent launch/logging paths during the final audit: bounded `printk`/`die`, exact mount-option token parsing, bounded initial argv construction, safe `PT_INTERP` loading, shebang optional-argument trimming, and safe ptraceomatic `TERM` environment construction.
+- Hardened production-adjacent launch/logging paths during the final audit: bounded `printk`/`die`, exact mount-option token parsing, bounded initial argv construction, safe `PT_INTERP` loading, and shebang optional-argument trimming.
 - Added ARM64 `preadv`/`pwritev` implementations and wired syscalls 69/70 to
   remove Node/npm fallback noise.
 - Reclassified the earlier `HIGHBITS pc=0xefec3698` noise as an invalid

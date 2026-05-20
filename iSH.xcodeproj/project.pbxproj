@@ -264,13 +264,11 @@
 		BB88F4942154760800A341FD /* FileProviderExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = BB88F4932154760800A341FD /* FileProviderExtension.m */; };
 		BB88F4972154760800A341FD /* FileProviderItem.m in Sources */ = {isa = PBXBuildFile; fileRef = BB88F4962154760800A341FD /* FileProviderItem.m */; };
 		BB88F49A2154760800A341FD /* FileProviderEnumerator.m in Sources */ = {isa = PBXBuildFile; fileRef = BB88F4992154760800A341FD /* FileProviderEnumerator.m */; };
-		BB8C3AFF26B7B8CF00E38DDC /* fakefs.c in Sources */ = {isa = PBXBuildFile; fileRef = BB8C3AFD26B7B8AF00E38DDC /* fakefs.c */; };
 		BB9C7B87240A2B1E00F5D4F0 /* AppGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = BB9C7B84240A240E00F5D4F0 /* AppGroup.m */; };
 		BBA8E2C1236FF5EA00515F76 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBA8E2C0236FF5EA00515F76 /* SystemConfiguration.framework */; };
 		BBAEE339249B58E80069EBB5 /* libbz2.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BBAEE338249B58E80069EBB5 /* libbz2.tbd */; };
 		BBBCE7E321D2F02200CA00B3 /* About.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BBBCE7E521D2F02200CA00B3 /* About.storyboard */; };
 		BBBD741426B7BE2E00321AC5 /* libfakefs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BB21A16F2689041500BD19B4 /* libfakefs.a */; };
-		BBBDDF922CE0122F0071F1F3 /* emu_asbestos.c in Sources */ = {isa = PBXBuildFile; fileRef = BBBDDF912CE0122F0071F1F3 /* emu_asbestos.c */; };
 		BBBDDF932CE0132F0071F1F3 /* libiSHLinuxUser.a in Frameworks */ = {isa = PBXBuildFile; fileRef = BBBDDF8F2CE00F6B0071F1F3 /* libiSHLinuxUser.a */; };
 		BBBF7B5C2415CDBB00EC4C14 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BBBF7B5B2415CDBB00EC4C14 /* Settings.bundle */; };
 		BBBF9CBD27C217B6002A30F7 /* PasteboardDeviceLinux.c in Sources */ = {isa = PBXBuildFile; fileRef = BBBF9CBB27C217A6002A30F7 /* PasteboardDeviceLinux.c */; };
@@ -593,14 +591,6 @@
 		497F6C04254E5C0E00C82F46 /* real.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = real.c; sourceTree = "<group>"; };
 		497F6C05254E5C0E00C82F46 /* tty-real.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "tty-real.c"; sourceTree = "<group>"; };
 		497F6C06254E5C0E00C82F46 /* pty.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pty.c; sourceTree = "<group>"; };
-		497F6C28254E5C4F00C82F46 /* control.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = control.S; sourceTree = "<group>"; };
-		497F6C29254E5C4F00C82F46 /* misc.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = misc.S; sourceTree = "<group>"; };
-		497F6C2A254E5C4F00C82F46 /* entry.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = entry.S; sourceTree = "<group>"; };
-		497F6C2B254E5C4F00C82F46 /* math.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = math.S; sourceTree = "<group>"; };
-		497F6C2C254E5C4F00C82F46 /* memory.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = memory.S; sourceTree = "<group>"; };
-		497F6C2D254E5C4F00C82F46 /* gadgets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gadgets.h; sourceTree = "<group>"; };
-		497F6C2E254E5C4F00C82F46 /* string.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = string.S; sourceTree = "<group>"; };
-		497F6C2F254E5C4F00C82F46 /* bits.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = bits.S; sourceTree = "<group>"; };
 		497F6C30254E5C4F00C82F46 /* gadgets-generic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "gadgets-generic.h"; sourceTree = "<group>"; };
 		497F6C32254E5C4F00C82F46 /* control.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = control.S; sourceTree = "<group>"; };
 		497F6C33254E5C4F00C82F46 /* misc.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = misc.S; sourceTree = "<group>"; };
@@ -819,7 +809,6 @@
 		BB88F49B2154760800A341FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB88F49C2154760800A341FD /* iSHFileProvider.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iSHFileProvider.entitlements; sourceTree = "<group>"; };
 		BB88F4A4215476BA00A341FD /* iSH.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iSH.entitlements; sourceTree = "<group>"; };
-		BB8C3AFD26B7B8AF00E38DDC /* fakefs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fakefs.c; path = linux/fakefs.c; sourceTree = SOURCE_ROOT; };
 		BB9C7B84240A240E00F5D4F0 /* AppGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppGroup.m; sourceTree = "<group>"; };
 		BB9C7B86240A29DE00F5D4F0 /* AppGroup.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppGroup.h; sourceTree = "<group>"; };
 		BB9C7B88240A343400F5D4F0 /* iSH.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = iSH.xcconfig; path = app/iSH.xcconfig; sourceTree = "<group>"; };
@@ -832,7 +821,6 @@
 		BBBCE7E421D2F02200CA00B3 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/About.storyboard; sourceTree = "<group>"; };
 		BBBDDF8F2CE00F6B0071F1F3 /* libiSHLinuxUser.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libiSHLinuxUser.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		BBBDDF902CE00F8D0071F1F3 /* StaticLibLinuxUser.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = StaticLibLinuxUser.xcconfig; sourceTree = "<group>"; };
-		BBBDDF912CE0122F0071F1F3 /* emu_asbestos.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = emu_asbestos.c; path = linux/emu_asbestos.c; sourceTree = SOURCE_ROOT; };
 		BBBF7B5B2415CDBB00EC4C14 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		CC000001AF96D90D00FFB7A4 /* RootfsPatch.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = RootfsPatch.bundle; sourceTree = "<group>"; };
 		BBBF9CBB27C217A6002A30F7 /* PasteboardDeviceLinux.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = PasteboardDeviceLinux.c; sourceTree = "<group>"; };
@@ -964,21 +952,6 @@
 				497F6BF3254E5C0D00C82F46 /* root.c */,
 			);
 			path = proc;
-			sourceTree = "<group>";
-		};
-		497F6C27254E5C4F00C82F46 /* gadgets-x86_64 */ = {
-			isa = PBXGroup;
-			children = (
-				497F6C28254E5C4F00C82F46 /* control.S */,
-				497F6C29254E5C4F00C82F46 /* misc.S */,
-				497F6C2A254E5C4F00C82F46 /* entry.S */,
-				497F6C2B254E5C4F00C82F46 /* math.S */,
-				497F6C2C254E5C4F00C82F46 /* memory.S */,
-				497F6C2D254E5C4F00C82F46 /* gadgets.h */,
-				497F6C2E254E5C4F00C82F46 /* string.S */,
-				497F6C2F254E5C4F00C82F46 /* bits.S */,
-			);
-			path = "gadgets-x86_64";
 			sourceTree = "<group>";
 		};
 		497F6C31254E5C4F00C82F46 /* gadgets-aarch64 */ = {
@@ -1406,7 +1379,6 @@
 				497F6C30254E5C4F00C82F46 /* gadgets-generic.h */,
 				497F6C3E254E5C4F00C82F46 /* gen.h */,
 				497F6C31254E5C4F00C82F46 /* gadgets-aarch64 */,
-				497F6C27254E5C4F00C82F46 /* gadgets-x86_64 */,
 			);
 			path = asbestos;
 			sourceTree = "<group>";
@@ -1437,8 +1409,6 @@
 				BB123ACB26C9EFD900419CDA /* LinuxTTY.c */,
 				BBEEA9E9277DAB400069495B /* LinuxPTY.c */,
 				BBEEA9E7277D25090069495B /* LinuxRoot.c */,
-				BB8C3AFD26B7B8AF00E38DDC /* fakefs.c */,
-				BBBDDF912CE0122F0071F1F3 /* emu_asbestos.c */,
 			);
 			name = LinuxInterop;
 			sourceTree = "<group>";
@@ -2532,7 +2502,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BBBDDF922CE0122F0071F1F3 /* emu_asbestos.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2542,7 +2511,6 @@
 			files = (
 				BBECF3AD269132F400DEC937 /* LinuxInterop.c in Sources */,
 				BBBF9CBD27C217B6002A30F7 /* PasteboardDeviceLinux.c in Sources */,
-				BB8C3AFF26B7B8CF00E38DDC /* fakefs.c in Sources */,
 				BBEEA9E8277D25090069495B /* LinuxRoot.c in Sources */,
 				BB123ACC26C9EFD900419CDA /* LinuxTTY.c in Sources */,
 				BBEEA9EA277DAB400069495B /* LinuxPTY.c in Sources */,

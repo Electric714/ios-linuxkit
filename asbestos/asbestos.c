@@ -802,9 +802,7 @@ static struct fiber_block *fiber_block_compile(addr_t ip, struct tlb *tlb) {
             break;
         // no block should span more than 2 pages
         // guarantee this by limiting total block size to 1 page
-        // guarantee that by stopping as soon as there's less space left than
-        // the maximum length of an x86 instruction
-        // TODO refuse to decode instructions longer than 15 bytes
+        // TODO refuse to decode implausibly long gadget streams
 #ifdef GUEST_ARM64
         if (state.internal_continue_segment_budget != 0 &&
                 state.ip - state.internal_continue_segment_start >=

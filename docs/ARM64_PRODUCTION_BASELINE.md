@@ -69,7 +69,7 @@ Reviewed: 2026-05-17
 ## Production-readiness notes
 
 - OpenJDK default mixed mode is enabled; no `-Xint`, `-XX:-UseCompiler`, `ReplayIgnoreInitErrors`, `DisableIntrinsic`, or runtime/user-data patch is required for the validated Java smoke.
-- The final audit pass also hardens host/guest launch plumbing: initial argv construction is bounds-checked, ELF `PT_INTERP` names are bounded and explicitly NUL-terminated, shebang trimming no longer walks before the optional argument string, and ptraceomatic no longer reads before `getenv("TERM")` while constructing the initial environment.
+- The final audit pass also hardens host/guest launch plumbing: initial argv construction is bounds-checked, ELF `PT_INTERP` names are bounded and explicitly NUL-terminated, and shebang trimming no longer walks before the optional argument string.
 - ARM64 synthetic non-null read-fault recovery remains compile-time gated by `ENABLE_ARM64_READ_FAULT_RECOVERY` and disabled in production builds.
 - Guest self-modifying/JIT-patched code invalidation, `CLREX`, `LDXR` widths, `LDPSW`, `DMB`/`DSB`/`ISB`, per-thread `sigaltstack`, `fchmodat2(AT_EMPTY_PATH)`, scheduler priority syscalls, high-address `MAP_NORESERVE` reservation overlap, C# NativeAOT SDK availability, and Python/Lua/Java/Clojure/PyPy/Swift/Rust/Erlang/Zig toolchain startup/codegen or availability coverage are covered by runtime fixtures. Speculative ARM64 hot-trace candidate instrumentation has been removed; retained executor diagnostics are block/chaining/prechain counters only.
 - Host OS differences for sysinfo, thread rusage, fd path lookup, stat timestamp fields, random bytes, thread naming, and memory-pressure hooks are centralized through `platform/platform.h`.
@@ -87,4 +87,4 @@ Reviewed: 2026-05-17
 
 - Non-production diagnostic compatibility for ARM64 read-fault recovery exists behind `ENABLE_ARM64_READ_FAULT_RECOVERY`; keep it disabled unless explicitly debugging.
 - Native offload and socket/poll implementations still contain host-specific implementation branches outside `platform/platform.h`; the second socket audit hardened Unix socket backing paths, accept/name buffers, send/receive buffer allocation, ARM64 control-message layout/validation, socket-option buffers, and bind-failure cleanup, but broader host-specific socket/poll cleanup remains a future candidate.
-- Full x86 guest builds remain outside this ARM64 baseline; an audit object build confirmed `kernel_memory.c.o` no longer leaks ARM64 reservation helpers into x86 compilation, while unrelated x86 build failures remain in ARM64-specific `main.c`/`asbestos.c` paths.
+- The legacy x86 guest/backend has been removed from this ARM64-only baseline; keep future validation focused on AArch64 guest behavior and host portability.

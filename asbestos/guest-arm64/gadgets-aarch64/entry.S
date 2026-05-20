@@ -4,7 +4,7 @@
  * This file contains the entry and exit points for transitioning between
  * the host (native) code and the emulated ARM64 guest code.
  *
- * Calling convention matches x86 guest:
+ * Calling convention used by the ARM64 guest backend:
  *   fiber_enter(block, frame, tlb)
  *   - x0 = block (pointer to fiber_block)
  *   - x1 = frame (pointer to fiber_frame, contains cpu_state)

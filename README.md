@@ -22,7 +22,7 @@ The terminal app in this repository is a reference shell. The reusable parts are
 |---|---:|---|
 | Core runtime coverage | **83 / 83 passing** | Alpine ARM64 fakefs; no `SAFETY-VALVE` or `NETDIAG` diagnostics in the latest report. |
 | npm CLI package lane | **16 / 16 passing** | Kept separate because npm packages move quickly. |
-| CLI corner-case smoke | **27 pass / 2 unsupported / 0 fail** | Docker daemon/container rows are recorded as unsupported when kernel primitives are absent. |
+| CLI corner-case smoke | **57 pass / 2 unsupported / 0 fail** | Wiki-derived CLI probes pass; `dig` DNS now uses real UDP successfully; Docker daemon/container rows remain unsupported for known runtime/kernel limitations. |
 | Benchmarks Game rows | **10 / 10 per row** | GCC, G++, Go, Python, Node.js, PHP, Perl, Ruby, Lua. |
 | Java-equivalent Benchmarks Game | **10 / 10** | Mixed-mode and interpreter fallback both pass. |
 
@@ -62,7 +62,7 @@ Generated reports are Markdown files under `REPORT_DIR`. A row is not a pass if 
 
 | Question | Short answer |
 |---|---|
-| Why not upstream iSH as-is? | The i386 guest limits address space and runtime compatibility. This fork targets ARM-on-ARM interactive use. |
+| Why not upstream iSH as-is? | The legacy i386 guest limits address space and runtime compatibility. This fork is ARM64-only and targets ARM-on-ARM interactive use. |
 | Is this an App Store product? | No. The checked-in app is a reference terminal and packaging harness. |
 | Why rename it? | To avoid confusion with upstream iSH and make the runtime-kit goal explicit. |
 
