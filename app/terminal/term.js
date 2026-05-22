@@ -137,7 +137,8 @@ function installBridgeExports() {
     window.exports.write = (data) => {
         const bytes = latin1StringToBytes(data);
         term.write(bytes);
-        syncApplicationCursor();
+        if (bytes.includes(0x1b))
+            syncApplicationCursor();
         scheduleScrollSync();
     };
 

@@ -323,11 +323,14 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
 #if !ISH_LINUX
     lock(&_dataLock);
     if (_outputInProgress) {
-        [self.refreshTask schedule];
         unlock(&_dataLock);
         return;
     }
     NSData *data = _pendingData;
+    if (data.length == 0) {
+        unlock(&_dataLock);
+        return;
+    }
     _pendingData = [[NSMutableData alloc] initWithCapacity:BUF_SIZE];
     _outputInProgress = YES;
     notify(&self->_dataConsumed);
@@ -335,11 +338,11 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
 #else
     NSData *data;
     @synchronized (self) {
-        if (_outputInProgress) {
-            [self.refreshTask schedule];
+        if (_outputInProgress)
             return;
-        }
         data = _pendingData;
+        if (data.length == 0)
+            return;
         _pendingData = [[NSMutableData alloc] initWithCapacity:BUF_SIZE];
         _outputInProgress = YES;
         tty_t tty = self->_tty;
@@ -359,15 +362,20 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
     NSString *jsonArgs = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     NSString *jsToEvaluate = [NSString stringWithFormat:@"exports.write.apply(null, %@)", jsonArgs ?: @"[\"\"]"];
     [self.webView evaluateJavaScript:jsToEvaluate completionHandler:^(id result, NSError *error) {
+        BOOL needsRefresh = NO;
 #if !ISH_LINUX
         lock(&self->_dataLock);
         self->_outputInProgress = NO;
+        needsRefresh = self->_pendingData.length > 0;
         unlock(&self->_dataLock);
 #else
         @synchronized (self) {
             self->_outputInProgress = NO;
+            needsRefresh = self->_pendingData.length > 0;
         }
 #endif
+        if (needsRefresh)
+            [self.refreshTask schedule];
         if (error != nil) {
             NSLog(@"error sending bytes to the terminal: %@", error);
             return;
