@@ -127,7 +127,11 @@ static NSMapTable<NSUUID *, Terminal *> *terminalsByUUID;
             _webView.inspectable = YES;
         _webView.layer.drawsAsynchronously = YES;
         _webView.scrollView.scrollEnabled = NO;
+#if USE_XTERM_RENDERER
+        NSURL *xtermHtmlFile = [NSBundle.mainBundle URLForResource:@"xterm-term" withExtension:@"html"];
+#else
         NSURL *xtermHtmlFile = [NSBundle.mainBundle URLForResource:@"term" withExtension:@"html"];
+#endif
         // Give WebKit access to the containing bundle directory so the
         // terminal frontend can load adjacent classic scripts and assets.
         [_webView loadFileURL:xtermHtmlFile allowingReadAccessToURL:xtermHtmlFile.URLByDeletingLastPathComponent];

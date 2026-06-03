@@ -131,6 +131,9 @@
 		AA000502AF96D90D00FFB7A4 /* ghostty-web.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000500AF96D90D00FFB7A4 /* ghostty-web.js */; };
 		AA000503AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA000501AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt */; };
 		AA000505AF96D90D00FFB7A4 /* ghostty-vt.wasm in Resources */ = {isa = PBXBuildFile; fileRef = AA000504AF96D90D00FFB7A4 /* ghostty-vt.wasm */; };
+		XT000011AF96D90D00FFB7A4 /* xterm-term.html in Resources */ = {isa = PBXBuildFile; fileRef = XT000001AF96D90D00FFB7A4 /* xterm-term.html */; };
+		XT000012AF96D90D00FFB7A4 /* xterm-term-bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = XT000002AF96D90D00FFB7A4 /* xterm-term-bridge.js */; };
+		XT000013AF96D90D00FFB7A4 /* xterm-vendor in Resources */ = {isa = PBXBuildFile; fileRef = XT000003AF96D90D00FFB7A4 /* xterm-vendor */; };
 		CC000002AF96D90D00FFB7A4 /* RootfsPatch.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CC000001AF96D90D00FFB7A4 /* RootfsPatch.bundle */; };
 		FC000001AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC000010AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf */; };
 		FC000002AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC000011AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf */; };
@@ -221,6 +224,9 @@
 		BB000502AF96D90D00FFB7A4 /* ghostty-web.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000500AF96D90D00FFB7A4 /* ghostty-web.js */; };
 		BB000503AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt in Resources */ = {isa = PBXBuildFile; fileRef = AA000501AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt */; };
 		BB000505AF96D90D00FFB7A4 /* ghostty-vt.wasm in Resources */ = {isa = PBXBuildFile; fileRef = AA000504AF96D90D00FFB7A4 /* ghostty-vt.wasm */; };
+		XT000021AF96D90D00FFB7A4 /* xterm-term.html in Resources */ = {isa = PBXBuildFile; fileRef = XT000001AF96D90D00FFB7A4 /* xterm-term.html */; };
+		XT000022AF96D90D00FFB7A4 /* xterm-term-bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = XT000002AF96D90D00FFB7A4 /* xterm-term-bridge.js */; };
+		XT000023AF96D90D00FFB7A4 /* xterm-vendor in Resources */ = {isa = PBXBuildFile; fileRef = XT000003AF96D90D00FFB7A4 /* xterm-vendor */; };
 		CC000003AF96D90D00FFB7A4 /* RootfsPatch.bundle in Resources */ = {isa = PBXBuildFile; fileRef = CC000001AF96D90D00FFB7A4 /* RootfsPatch.bundle */; };
 		FC000004AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC000010AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf */; };
 		FC000005AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC000011AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf */; };
@@ -766,6 +772,10 @@
 		AA000500AF96D90D00FFB7A4 /* ghostty-web.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "ghostty-web.js"; sourceTree = "<group>"; };
 		AA000501AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "ghostty-web-VENDORED.txt"; sourceTree = "<group>"; };
 		AA000504AF96D90D00FFB7A4 /* ghostty-vt.wasm */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ghostty-vt.wasm"; sourceTree = "<group>"; };
+
+		XT000001AF96D90D00FFB7A4 /* xterm-term.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "xterm-term.html"; sourceTree = "<group>"; };
+		XT000002AF96D90D00FFB7A4 /* xterm-term-bridge.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "xterm-term-bridge.js"; sourceTree = "<group>"; };
+		XT000003AF96D90D00FFB7A4 /* xterm-vendor */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "xterm-vendor"; sourceTree = "<group>"; };
 		FC000010AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "FiraCodeNerdFontMono-Regular.ttf"; sourceTree = "<group>"; };
 		FC000011AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "FiraCodeNerdFontMono-Bold.ttf"; sourceTree = "<group>"; };
 		FC000012AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-VENDORED.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "FiraCodeNerdFontMono-VENDORED.txt"; sourceTree = "<group>"; };
@@ -1127,6 +1137,9 @@
 				FC000010AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Regular.ttf */,
 				FC000011AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-Bold.ttf */,
 				FC000012AF96D90D00FFB7A4 /* FiraCodeNerdFontMono-VENDORED.txt */,
+				XT000001AF96D90D00FFB7A4 /* xterm-term.html */,
+				XT000002AF96D90D00FFB7A4 /* xterm-term-bridge.js */,
+				XT000003AF96D90D00FFB7A4 /* xterm-vendor */,
 				BB2B4DAB231D94C300CB578B /* hterm_all.js */,
 			);
 			path = terminal;
@@ -1929,6 +1942,9 @@
 				AA000502AF96D90D00FFB7A4 /* ghostty-web.js in Resources */,
 				AA000503AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt in Resources */,
 				AA000505AF96D90D00FFB7A4 /* ghostty-vt.wasm in Resources */,
+				XT000011AF96D90D00FFB7A4 /* xterm-term.html in Resources */,
+				XT000012AF96D90D00FFB7A4 /* xterm-term-bridge.js in Resources */,
+				XT000013AF96D90D00FFB7A4 /* xterm-vendor in Resources */,
 				CC000002AF96D90D00FFB7A4 /* RootfsPatch.bundle in Resources */,
 				JB000001AF96D90D00FFB7A4 /* JetBrainsMonoNerdFontMono-Regular.ttf in Resources */,
 				JB000002AF96D90D00FFB7A4 /* JetBrainsMonoNerdFontMono-Bold.ttf in Resources */,
@@ -1980,6 +1996,9 @@
 				BB000502AF96D90D00FFB7A4 /* ghostty-web.js in Resources */,
 				BB000503AF96D90D00FFB7A4 /* ghostty-web-VENDORED.txt in Resources */,
 				BB000505AF96D90D00FFB7A4 /* ghostty-vt.wasm in Resources */,
+				XT000021AF96D90D00FFB7A4 /* xterm-term.html in Resources */,
+				XT000022AF96D90D00FFB7A4 /* xterm-term-bridge.js in Resources */,
+				XT000023AF96D90D00FFB7A4 /* xterm-vendor in Resources */,
 				CC000003AF96D90D00FFB7A4 /* RootfsPatch.bundle in Resources */,
 				JB000004AF96D90D00FFB7A4 /* JetBrainsMonoNerdFontMono-Regular.ttf in Resources */,
 				JB000005AF96D90D00FFB7A4 /* JetBrainsMonoNerdFontMono-Bold.ttf in Resources */,
