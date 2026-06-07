@@ -43,7 +43,14 @@ jobs:
         run: |
           brew install llvm lld ninja libarchive meson
 
-      - name: Build unsigned .app
+      # ============================================================
+      # This job builds the DEFAULT Ghostty-based renderer version
+      # (not the lighter xterm.js version).
+      # Uses scheme iSH-ARM64 + default configuration.
+      # Produces LinuxKit.app → converts to unsigned LinuxKit-unsigned.ipa
+      # ============================================================
+
+      - name: Build unsigned .app (Ghostty renderer - default)
         run: |
           xcodebuild \
             -project iSH.xcodeproj \
