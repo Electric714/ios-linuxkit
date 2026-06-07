@@ -35,6 +35,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath ./build/DerivedData \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
             clean build
 
       - name: Find the built .app
