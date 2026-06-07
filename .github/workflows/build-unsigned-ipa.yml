@@ -40,9 +40,11 @@ jobs:
       - name: Find the built .app
         id: find-app
         run: |
-          APP_PATH=$(find ./build/DerivedData -path "*/Build/Products/Release-iphoneos/iSH ARM64.app" -type d | head -1)
+          APP_PATH=$(find ./build/DerivedData -name "LinuxKit.app" -type d 2>/dev/null | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: Could not find iSH ARM64.app in DerivedData"
+            echo "ERROR: Could not find LinuxKit.app in DerivedData"
+            echo "Contents of DerivedData:"
+            find ./build/DerivedData -name "*.app" -type d | head -20 || true
             exit 1
           fi
           echo "Built unsigned app located at: $APP_PATH"
@@ -51,7 +53,7 @@ jobs:
       - name: Upload unsigned .app artifact
         uses: actions/upload-artifact@v5
         with:
-          name: iSH-ARM64-unsigned-app
+          name: LinuxKit-unsigned-app
           path: ${{ steps.find-app.outputs.app_path }}
           retention-days: 14
           if-no-files-found: error
@@ -61,13 +63,13 @@ jobs:
           cat >> $GITHUB_STEP_SUMMARY << 'EOF'
           ## 🚨 Unsigned Build Complete
 
-          The workflow has built an **unsigned** `iSH ARM64.app` bundle using scheme `iSH-ARM64`.
+          The workflow has built an **unsigned** `LinuxKit.app` bundle using scheme `iSH-ARM64`.
 
           ### How to create the unsigned .ipa file
 
-          After downloading the `iSH-ARM64-unsigned-app` artifact:
+          After downloading the `LinuxKit-unsigned-app` artifact:
 
-          1. Unzip/extract the artifact (you should have a folder called `iSH ARM64.app`)
+          1. Unzip/extract the artifact (you should have a folder called `LinuxKit.app`)
 
           2. On your Mac, open Terminal and run:
 
@@ -75,14 +77,14 @@ jobs:
           cd ~/Downloads   # change to wherever you extracted the .app
 
           mkdir -p Payload
-          cp -R "iSH ARM64.app" Payload/
-          zip -r "iSH-ARM64-unsigned.ipa" Payload
+          cp -R "LinuxKit.app" Payload/
+          zip -r "LinuxKit-unsigned.ipa" Payload
           rm -rf Payload
 
-          echo "Created: iSH-ARM64-unsigned.ipa"
+          echo "Created: LinuxKit-unsigned.ipa"
           ```
 
-          3. You now have `iSH-ARM64-unsigned.ipa` ready for sideloading (TrollStore, Scarlet, etc.).
+          3. You now have `LinuxKit-unsigned.ipa` ready for sideloading (TrollStore, Scarlet, etc.).
 
           > **Note**: This is a completely unsigned IPA. It will not install through normal Xcode, TestFlight, or the App Store.
           EOF
