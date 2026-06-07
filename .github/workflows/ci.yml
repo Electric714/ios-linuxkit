@@ -60,9 +60,9 @@ jobs:
       - name: Locate built .app
         id: locate-app
         run: |
-          APP_PATH=$(find ./build/DerivedData -name "iSH ARM64.app" -type d 2>/dev/null | head -1)
+          APP_PATH=$(find ./build/DerivedData -name "LinuxKit.app" -type d 2>/dev/null | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: Could not find iSH ARM64.app anywhere in DerivedData"
+            echo "ERROR: Could not find LinuxKit.app anywhere in DerivedData"
             echo "Contents of DerivedData:"
             find ./build/DerivedData -name "*.app" -type d | head -20 || true
             exit 1
@@ -74,14 +74,14 @@ jobs:
         run: |
           mkdir -p Payload
           cp -R "${{ steps.locate-app.outputs.app_path }}" Payload/
-          zip -r "iSH-ARM64-unsigned.ipa" Payload
+          zip -r "LinuxKit-unsigned.ipa" Payload
           rm -rf Payload
-          echo "Created iSH-ARM64-unsigned.ipa"
+          echo "Created LinuxKit-unsigned.ipa"
 
       - name: Upload unsigned .ipa artifact
         uses: actions/upload-artifact@v5
         with:
-          name: iSH-ARM64-unsigned-ipa
-          path: iSH-ARM64-unsigned.ipa
+          name: LinuxKit-unsigned-ipa
+          path: LinuxKit-unsigned.ipa
           retention-days: 14
           if-no-files-found: error
