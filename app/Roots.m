@@ -11,30 +11,11 @@
 #import "NSObject+SaneKVO.h"
 #include "tools/fakefs.h"
 
-// ============================================================
-// DEBUG LOGGING TO APP GROUP CONTAINER
-// Writes to ContainerURL()/ios-linuxkit-debug.log
-// ============================================================
+#import "Logging.h"
 
-static void DebugLog(NSString *format, ...) {
-    va_list args;
-    va_start(args, format);
-    NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
-    va_end(args);
-
-    NSURL *logURL = [ContainerURL() URLByAppendingPathComponent:@"ios-linuxkit-debug.log"];
-    NSString *timestamped = [NSString stringWithFormat:@"%@ % @\n", [NSDate date], message];
-
-    NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:logURL.path];
-    if (fileHandle) {
-        [fileHandle seekToEndOfFile];
-        [fileHandle writeData:[timestamped dataUsingEncoding:NSUTF8StringEncoding]];
-        [fileHandle closeFile];
-    } else {
-        // Create file if it doesn't exist
-        [timestamped writeToURL:logURL atomically:YES encoding:NSUTF8StringEncoding error:nil];
-    }
-}
+// Redirect all existing DebugLog calls to the new global logger
+// which writes to Documents/Logs/ios-linuxkit.log (visible in Files app)
+#define DebugLog(...) Log(__VA_ARGS__)
 
 static NSURL *RootsDir(void) {
     static NSURL *rootsDir;
@@ -44,7 +25,7 @@ static NSURL *RootsDir(void) {
         NSFileManager *manager = [NSFileManager defaultManager];
         [manager createDirectoryAtURL:rootsDir
           withIntermediateDirectories:YES
-                           attributes:@{}
+                           attributes:@{} 
                                 error:nil];
     });
     return rootsDir;
@@ -246,7 +227,7 @@ void root_progress_callback(void *cookie, double progress, const char *message, 
     return YES;
 }
 
-- (BOOL)renameRoot:(NSString *)name toName:(NSString *)newName error:(NSError **)error {
+- (BOOL)renameRoot:(NSString *)name toName:(NSString *)newName error:(NSError **)error ) {
     if (name.length == 0) {
         *error = [NSError errorWithDomain:@"ios-linuxkit" code:0 userInfo:@{NSLocalizedDescriptionKey: @"Filesystem name can't be empty"}];
         return NO;
