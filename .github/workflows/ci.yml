@@ -42,4 +42,4 @@ jobs:
         run: |
           brew install llvm lld ninja libarchive meson
       - name: Build
-        run: xcodebuild -project iSH.xcodeproj -scheme iSH -arch arm64 -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+        run: xcodebuild -project iSH.xcodeproj -scheme iSH-ARM64 -arch arm64 -sdk iphoneos CODE_SIGNING_ALLOWED=NO
