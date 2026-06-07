@@ -1,0 +1,89 @@
+name: Build Unsigned .app (Manual IPA Instructions)
+
+on:
+  workflow_dispatch:
+    # You can manually trigger this workflow from the Actions tab
+
+jobs:
+  build-unsigned-app:
+    runs-on: macos-15
+    timeout-minutes: 180
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          brew install ninja lld llvm meson
+          bundle install
+
+      - name: Build unsigned iOS .app (CODE_SIGNING_ALLOWED=NO)
+        run: |
+          xcodebuild \
+            -project iSH.xcodeproj \
+            -scheme iSH \
+            -configuration Release \
+            -arch arm64 \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            -derivedDataPath ./build/DerivedData \
+            clean build
+
+      - name: Find the built .app
+        id: find-app
+        run: |
+          APP_PATH=$(find ./build/DerivedData -path "*/Build/Products/Release-iphoneos/iSH.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: Could not find iSH.app in DerivedData"
+            exit 1
+          fi
+          echo "Built unsigned app located at: $APP_PATH"
+          echo "app_path=$APP_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload unsigned .app artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: iSH-unsigned-app
+          path: ${{ steps.find-app.outputs.app_path }}
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Add IPA creation instructions to job summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## 🚨 Unsigned Build Complete
+
+          The workflow has built an **unsigned** `iSH.app` bundle.
+
+          ### How to create the unsigned .ipa file
+
+          After downloading the `iSH-unsigned-app` artifact:
+
+          1. Unzip/extract the artifact (you should have a folder called `iSH.app`)
+
+          2. On your Mac, open Terminal and run these commands:
+
+          ```bash
+          # Navigate to the folder containing iSH.app
+          cd ~/Downloads   # or wherever you extracted the artifact
+
+          mkdir -p Payload
+          cp -R "iSH.app" Payload/
+          zip -r "iSH-unsigned.ipa" Payload
+          rm -rf Payload
+
+          echo "Created: iSH-unsigned.ipa"
+          ```
+
+          3. You now have `iSH-unsigned.ipa` — ready for sideloading tools like **TrollStore**, Scarlet, Sideloadly (unsigned mode), etc.
+
+          > **Note**: This IPA is completely unsigned (no code signature). It will not install via normal Xcode / TestFlight / App Store methods.
+          EOF
